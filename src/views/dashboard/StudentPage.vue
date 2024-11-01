@@ -230,19 +230,20 @@ import { ref, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import { useCompeition } from "../../composables/useCompeition";
+
 const { getRecords, getReports, getCompetitionName, submitReport, submitRecord, generatepdf } = useCompeition();
 
 // 响应式数据
 const activeTab = ref("1");
 const reportDialogVisible = ref(false);
 const recordDialogVisible = ref(false);
-const dateRange = ref([]); // 用于存储选择的日期范围
+const dateRange = ref([]); // 存储选择的日期范围
 
 const reports = ref([]); // 报备列表
 const records = ref([]); // 记录列表
 
-const activeNamesReport = ['pending_report', 'rejected_report', 'approved_report']; // 竞赛报备默认展开的面板
-const activeNamesRecord = ['waiting_record', 'pending_record', 'approved_record', 'rejected_record']; // 竞赛记录默认展开的面板
+const activeNamesReport = ['pending_report', 'rejected_report', 'approved_report']; // 默认展开的报备面板
+const activeNamesRecord = ['waiting_record', 'pending_record', 'approved_record', 'rejected_record']; // 默认展开的记录面板
 
 const newReport = ref({
   name: "",
@@ -261,19 +262,20 @@ const newRecord = ref({
 });
 
 const comNames = ref([]); // 竞赛名称列表
+const sortOrder = ref("descending"); // 排序方式
 
-/** 排序相关 */
-const sortOrder = ref("descending");
+/** 计算属性 */
+
+// 计算排序后的报备列表
 const sortedReports = computed(() => {
   return [...reports.value].sort((a, b) => {
     const dateA = new Date(a.report_date).getTime(); 
     const dateB = new Date(b.report_date).getTime(); 
-
     return sortOrder.value === "descending" ? dateB - dateA : dateA - dateB;
   });
 });
 
-// 计算属性，按状态分类过滤报告
+// 计算状态过滤的报备列表
 const filteredReports = computed(() => {
   return {
     pending: sortedReports.value.filter(item => item.status === 'pending_report'),
@@ -282,29 +284,22 @@ const filteredReports = computed(() => {
   };
 });
 
+// 计算状态过滤的记录列表
 const filteredRecords = computed(() => {
   return {
-    waiting: records.value.filter(item => item.status === 'approved_report'),
+    waiting: records.value.filter(item => item.status === 'approved_record'),
     pending: records.value.filter(item => item.status === 'pending_record'),
     rejected: records.value.filter(item => item.status === 'rejected_record'),
     approved: records.value.filter(item => item.status === 'approved_record'),
   };
 });
 
-
-
-// 将创建报备中输入的比赛时间范围转化为开始时间和结束时间
-const handleDateChange = (value) => {
-  newReport.value.competition_start = value[0]; // 获取开始日期
-  newReport.value.competition_end = value[1]; // 获取结束日期
-};
-
 // 计算参赛数量
 const totalParticipationCount = computed(() => {
   return records.value.filter(record => record.status === "approved_record").length; 
 });
 
-
+/** 方法 */
 
 // 显示创建报备弹窗
 const showReportDialog = () => {
@@ -324,7 +319,6 @@ const resetNewReport = () => {
 
 // 显示创建记录弹窗
 const showRecordDialog = (ReportID) => {
-  console.log("Selected record ID:", ReportID); // 记录ID用于调试
   if (!ReportID) {
     ElMessage.error("未选择记录!");
     return;
@@ -332,7 +326,7 @@ const showRecordDialog = (ReportID) => {
   recordDialogVisible.value = true;
   resetNewRecord();
   newRecord.value.ReportID = ReportID; // 记录当前项的 ID
-  getRecords( records ); // 继续进行您的后续操作
+  getRecords(records); // 继续进行您的后续操作
 };
 
 // 重置创建记录表单
@@ -348,30 +342,53 @@ const resetNewRecord = () => {
 };
 
 // 获取比赛名称列表
-const handlegetCompetitionName = async (level) => {
-  if (level === "Other") {
+const handleGetCompetitionName = async (level) => {
+  if (level === "Other") return;
+  await getCompetitionName(newReport, comNames);
+};
+
+// 提交报备
+const handleSubmitReport = async () => {
+  if (!newReport.value.name || !newReport.value.competition_start || !newReport.value.competition_end || !newReport.value.level) {
+    ElMessage.error("请填写所有必填项!!!");
     return;
   }
-  await getCompetitionName( newReport, comNames);
-}
-// 提交报备
-const handlesubmitReport = async () => {
-  if (
-      !newReport.value.name ||
-      !newReport.value.competition_start ||
-      !newReport.value.competition_end ||
-      !newReport.value.level
-    ) {
-      ElMessage.error("请填写所有必填项!!!");
-      return;
-    }
-  await submitReport( newReport, reportDialogVisible);
+  await submitReport(newReport, reportDialogVisible);
   resetNewReport();
 };
 
+// 提交竞赛记录
+const handleSubmitRecord = async () => {
+  if (!newRecord.value.summary || !newRecord.value.reimbursement || !newRecord.value.photos.length || !newRecord.value.certificates.length || !newRecord.value.proof.length || !newRecord.value.ReportID) {
+    ElMessage.error("请填写所有必填项!!!");
+    return;
+  }
+  await submitRecord(newRecord, recordDialogVisible);
+  resetNewRecord();
+};
+
+// 监听 Tab 切换
+const handleSelect = (index) => {
+  activeTab.value = index;
+  if (index === "1") {
+    getReports(reports);
+  }
+  if (index === "2") {
+    getRecords(records);
+  }
+};
+
+// 页面加载完成后执行
+onMounted(async () => {
+  getReports(reports);
+  getRecords(records);
+});
+
+// 文件上传相关处理
 const beforeUpload = (file) => {
   return true;
 };
+
 // 更新竞赛图片列表
 const handleImageChange = (file) => {
   if (file.status === "ready") {
@@ -383,7 +400,7 @@ const handleRemove = (file, fileList) => {
   newRecord.value.photos = fileList; 
 };
 
-
+// 格式化文件列表
 const formattedFileList = (files) => {
   return files.map(file => {
     return {
@@ -415,41 +432,13 @@ const handlePrRemove = (file, fileList) => {
   newRecord.value.proof = fileList; 
 };
 
-// 提交竞赛记录
-const handlesubmitRecord = async () => {
-  if (
-      !newRecord.value.summary ||
-      !newRecord.value.reimbursement ||
-      !newRecord.value.photos.length ||
-      !newRecord.value.certificates.length ||
-      !newRecord.value.proof.length ||
-      !newRecord.value.ReportID
-  ) {
-    ElMessage.error("请填写所有必填项!!!");
-    return;
-  }
-  await submitRecord( newRecord, recordDialogVisible);
-  resetNewRecord();
+// 将创建报备中输入的比赛时间范围转化为开始时间和结束时间
+const handleDateChange = (value) => {
+  newReport.value.competition_start = value[0]; // 获取开始日期
+  newReport.value.competition_end = value[1]; // 获取结束日期
 };
-
-
-// 监听 Tab 切换
-const handleSelect = (index) => {
-  activeTab.value = index;
-  if (index === "1") {
-    getReports( reports );
-  }
-  if (index === "2") {
-    getRecords( records );
-  }
-};
-
-// 页面加载完成后执行
-onMounted(async () => {
-  getReports( reports );
-  getRecords( records );
-});
 </script>
+
 
 
 
