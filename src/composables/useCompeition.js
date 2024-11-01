@@ -12,7 +12,6 @@ export const useCompeition = () => {
         const res = await axios.get(`${URL}csrf/`, { withCredentials: true });
         return res.data.csrftoken;
     } catch (error) {
-        console.error('获取 CSRF 令牌失败：', error);
         ElMessage.error('获取 CSRF 令牌失败');
         return null;
     }
@@ -65,7 +64,6 @@ export const useCompeition = () => {
         await getReports();
     } catch (error) {
       ElMessage.error("审核失败!");
-      console.error(error);
     }
   };
   
@@ -141,35 +139,24 @@ const generatepdf = async (ReportID) => {
       credentials: 'include'
   })
   .then(response => {
-      console.log("响应状态:", response.ok); // 记录响应状态
       const disposition = response.headers.get('Content-Disposition');
-      console.log("Content-Disposition:", disposition); // 记录 Content-Disposition 头部
-
       let filename = 'default.pdf'; 
 
       if (disposition) {
-          console.log("分析 Content-Disposition 以获取文件名...");
-
           // 尝试匹配filename*格式
           const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
           if (filenameStarMatch && filenameStarMatch[1]) {
               // 解码并处理 '%' 进行替换
               filename = decodeURIComponent(filenameStarMatch[1].replace(/\+/g, '%20'));
-              console.log("从 filename* 获取的文件名:", filename); // 记录从 filename* 解析出的文件名
           } else {
               // 处理非编码文件名的情况
               const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
               if (filenameMatch && filenameMatch[1]) {
                   filename = filenameMatch[1].replace(/['"]/g, ''); // 清除引号
-                  console.log("从 filename 获取的文件名:", filename); // 记录从 filename 解析出的文件名
               }
           }
-      } else {
-          console.warn("未找到 Content-Disposition 头部");
       }
-
       return response.blob().then(blob => {
-          console.log("开始下载文件:", filename); // 记录即将下载的文件名
           return { blob, filename };
       });
   })
@@ -185,7 +172,6 @@ const generatepdf = async (ReportID) => {
       ElMessage.success("生成PDF成功!");
   })
   .catch(error => {
-      console.error("生成PDF失败:", error); // 记录错误信息
       ElMessage.error("生成PDF失败!");
   });
 };
