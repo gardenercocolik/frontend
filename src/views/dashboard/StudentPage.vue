@@ -137,7 +137,7 @@
       <el-form ref="reportForm" :model="newReport" label-width="120px">
         <!-- 比赛级别选择,根据选择的比赛级别，动态获取比赛名 -->
         <el-form-item label="比赛级别">
-          <el-select v-model="newReport.level" placeholder="请选择比赛级别" @change="getCompetitionName">
+          <el-select v-model="newReport.level" placeholder="请选择比赛级别" @change="handlegetCompetitionName">
             <el-option label="S" value="S"></el-option>
             <el-option label="A+" value="A+"></el-option>
             <el-option label="A" value="A"></el-option>
@@ -166,7 +166,7 @@
 
         <!-- 提交表单 -->
         <el-form-item>
-          <el-button type="primary" @click="submitReport">提交</el-button>
+          <el-button type="primary" @click="handlesubmitReport">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -217,7 +217,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="submitRecord">提交</el-button>
+          <el-button type="primary" @click="handlesubmitRecord">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -228,13 +228,9 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
-import axios from "axios";
 import NavBar from "@/components/NavBar.vue";
 import { useCompeition } from "../../composables/useCompeition";
-const { getRecords, getReports, generatepdf } = useCompeition();
-
-// API URL
-const API_URL = "http://localhost:18000/dashboard/";
+const { getRecords, getReports, getCompetitionName, submitReport, submitRecord, generatepdf } = useCompeition();
 
 // 响应式数据
 const activeTab = ref("1");
@@ -265,20 +261,6 @@ const newRecord = ref({
 });
 
 const comNames = ref([]); // 竞赛名称列表
-
-// CSRF 令牌
-const csrftoken = ref('');
-
-// 获取 CSRF 令牌的函数
-const getCSRFToken = async () => {
-    try {
-        const response = await axios.get("http://localhost:18000/csrf/", { withCredentials: true });
-        csrftoken.value = response.data.csrftoken; // 假设返回的数据中包含 csrftoken
-    } catch (error) {
-        console.error('获取 CSRF 令牌失败：', error);
-        ElMessage.error('获取 CSRF 令牌失败');
-    }
-};
 
 /** 排序相关 */
 const sortOrder = ref("descending");
@@ -365,74 +347,26 @@ const resetNewRecord = () => {
   };
 };
 
-// 获取比赛名
-const getCompetitionName = async () => {
-  if (newReport.value.level === "other") {
+// 获取比赛名称列表
+const handlegetCompetitionName = async (level) => {
+  if (level === "Other") {
     return;
   }
-  try {
-    const formData = new FormData();
-    formData.append('level', newReport.value.level); // 将数据添加到 FormData 对象中
-
-    const res = await axios.post(
-      `${API_URL}reports/return-competition-name/`,
-      formData, // 直接传入 formData
-      {
-        withCredentials: true,
-        headers: {
-          'X-CSRFToken': csrftoken.value // 添加 CSRF 令牌
-        }
-      }
-    );
-
-    comNames.value = res.data.data; // 修正路径以匹配后端返回的数据格式
-  } catch (error) {
-    ElMessage.error("获取比赛名失败");
-  }
-};
-
+  await getCompetitionName( newReport, comNames);
+}
 // 提交报备
-const submitReport = async () => {
-  console.log(newReport.value);
+const handlesubmitReport = async () => {
   if (
-    !newReport.value.name ||
-    !newReport.value.competition_start ||
-    !newReport.value.competition_end ||
-    !newReport.value.level
-  ) {
-    ElMessage.error("请填写所有必填项!!!");
-    return;
-  }
-
-  // 创建 FormData 对象
-  const formData = new FormData();
-  formData.append('name', newReport.value.name);
-  formData.append('competition_start', newReport.value.competition_start);
-  formData.append('competition_end', newReport.value.competition_end);
-  formData.append('level', newReport.value.level);
-
-  try {
-    const res = await axios.post(
-      `${API_URL}reports/create/`,
-      formData,  // 使用 FormData 作为请求体
-      {
-        withCredentials: true, // 添加 withCredentials
-        headers: {
-          'X-CSRFToken': csrftoken.value // 添加 CSRF 令牌
-        }
-      }
-    );
-    
-    if (res.status === 201) {
-      resetNewReport();
-      await getReports( reports );
-      ElMessage.success("报备成功!");
-      reportDialogVisible.value = false;
+      !newReport.value.name ||
+      !newReport.value.competition_start ||
+      !newReport.value.competition_end ||
+      !newReport.value.level
+    ) {
+      ElMessage.error("请填写所有必填项!!!");
+      return;
     }
-    window.location.reload();
-  } catch (error) {
-    ElMessage.error(error.response?.data?.error || "报备失败，请稍后再试");
-  }
+  await submitReport( newReport, reportDialogVisible);
+  resetNewReport();
 };
 
 const beforeUpload = (file) => {
@@ -482,64 +416,22 @@ const handlePrRemove = (file, fileList) => {
 };
 
 // 提交竞赛记录
-const submitRecord = async () => {
-  console.log(newRecord.value);
+const handlesubmitRecord = async () => {
   if (
-    !newRecord.value.summary ||
-    !newRecord.value.reimbursement ||
-    !newRecord.value.photos.length ||
-    !newRecord.value.certificates.length ||
-    !newRecord.value.proof.length ||
-    !newRecord.value.ReportID
+      !newRecord.value.summary ||
+      !newRecord.value.reimbursement ||
+      !newRecord.value.photos.length ||
+      !newRecord.value.certificates.length ||
+      !newRecord.value.proof.length ||
+      !newRecord.value.ReportID
   ) {
     ElMessage.error("请填写所有必填项!!!");
     return;
   }
-  
-  const formData = new FormData();
-  formData.append("summary", newRecord.value.summary);
-  console.log(newRecord.value.reimbursement);
-  formData.append("reimbursement", newRecord.value.reimbursement.toString());
-  formData.append("ReportID", newRecord.value.ReportID);
-
-  // 处理照片
-  newRecord.value.photos.forEach((photo) => {
-    formData.append("photos", photo.raw); // photo 中包含文件对象 raw
-  });
-
-  // 处理证书
-  newRecord.value.certificates.forEach((certificate) => {
-    formData.append("certificates", certificate.raw); // certificate 中包含文件对象 raw
-  });
-
-  // 处理报销凭证
-  newRecord.value.proof.forEach((proof) => {
-    formData.append("proof", proof.raw); // proof 中包含文件对象 raw
-  });
-
-  try {
-    const res = await axios.post(
-      `${API_URL}records/submit/`,
-      formData,
-      {
-        withCredentials: true, // 添加 withCredentials
-        headers: {
-          "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
-          'X-CSRFToken': csrftoken.value // 添加 CSRF 令牌
-        },
-      }
-    );
-
-    if (res.status === 201) {
-      resetNewRecord();
-      await getRecords( records );
-      ElMessage.success("上传记录成功!");
-      reportDialogVisible.value = false;
-    }
-  } catch (error) {
-    ElMessage.error(error.response?.data?.error || "上传记录失败，请稍后再试")
-  }
+  await submitRecord( newRecord, recordDialogVisible);
+  resetNewRecord();
 };
+
 
 // 监听 Tab 切换
 const handleSelect = (index) => {
@@ -554,7 +446,6 @@ const handleSelect = (index) => {
 
 // 页面加载完成后执行
 onMounted(async () => {
-  await getCSRFToken(); // 获取 CSRF 令牌
   getReports( reports );
   getRecords( records );
 });

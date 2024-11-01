@@ -124,57 +124,167 @@ export const useCompeition = () => {
     }
   };
 
-// 生成PDF
-const generatepdf = async (ReportID) => {
-  const csrftoken = await getCSRFToken();
-  const formData = new FormData();
-  formData.append('ReportID', ReportID);
+  // 获取比赛名
+  const getCompetitionName = async ( newReport, comNames ) => {
+    const csrftoken = await getCSRFToken();
+    if (newReport.value.level === "other") {
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append('level', newReport.value.level); // 将数据添加到 FormData 对象中
 
-  fetch(`${BASE_URL}records/GeneratePDF/`, {
-      method: 'POST',
-      headers: {
-          'X-CSRFToken': csrftoken,
-      },
-      body: formData,
-      credentials: 'include'
-  })
-  .then(response => {
-      const disposition = response.headers.get('Content-Disposition');
-      let filename = 'default.pdf'; 
-
-      if (disposition) {
-          // 尝试匹配filename*格式
-          const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
-          if (filenameStarMatch && filenameStarMatch[1]) {
-              // 解码并处理 '%' 进行替换
-              filename = decodeURIComponent(filenameStarMatch[1].replace(/\+/g, '%20'));
-          } else {
-              // 处理非编码文件名的情况
-              const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-              if (filenameMatch && filenameMatch[1]) {
-                  filename = filenameMatch[1].replace(/['"]/g, ''); // 清除引号
-              }
+      const res = await axios.post(
+        `${BASE_URL}reports/return-competition-name/`,
+        formData, // 直接传入 formData
+        {
+          withCredentials: true,
+          headers: {
+            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
           }
+        }
+      );
+
+      comNames.value = res.data.data; // 修正路径以匹配后端返回的数据格式
+    } catch (error) {
+      ElMessage.error("获取比赛名失败");
+    }
+  };
+
+  // 提交报备
+  const submitReport = async ( newReport, reportDialogVisible ) => {
+
+    const csrftoken = await getCSRFToken();
+    // 创建 FormData 对象
+    const formData = new FormData();
+    formData.append('name', newReport.value.name);
+    formData.append('competition_start', newReport.value.competition_start);
+    formData.append('competition_end', newReport.value.competition_end);
+    formData.append('level', newReport.value.level);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}reports/create/`,
+        formData,  // 使用 FormData 作为请求体
+        {
+          withCredentials: true, // 添加 withCredentials
+          headers: {
+            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
+          }
+        }
+      );
+      
+      if (res.status === "success") {
+        await getReports( reports );
+        ElMessage.success("报备成功!");
+        reportDialogVisible.value = false;
       }
-      return response.blob().then(blob => {
-          return { blob, filename };
-      });
-  })
-  .then(({ blob, filename }) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename; // 使用提取的文件名
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url); // 释放Blob对象
-      ElMessage.success("生成PDF成功!");
-  })
-  .catch(error => {
-      ElMessage.error("生成PDF失败!");
-  });
-};
+      window.location.reload();
+    } catch (error) {
+      ElMessage.error(error.response?.data?.error || "报备失败，请稍后再试");
+    }
+  };
+
+  // 提交竞赛记录
+  const submitRecord = async ( newRecord, reportDialogVisible ) => {
+    const csrftoken = await getCSRFToken();
+    console.log(newRecord.value);
+    
+    const formData = new FormData();
+    formData.append("summary", newRecord.value.summary);
+    console.log(newRecord.value.reimbursement);
+    formData.append("reimbursement", newRecord.value.reimbursement.toString());
+    formData.append("ReportID", newRecord.value.ReportID);
+
+    // 处理照片
+    newRecord.value.photos.forEach((photo) => {
+      formData.append("photos", photo.raw); // photo 中包含文件对象 raw
+    });
+
+    // 处理证书
+    newRecord.value.certificates.forEach((certificate) => {
+      formData.append("certificates", certificate.raw); // certificate 中包含文件对象 raw
+    });
+
+    // 处理报销凭证
+    newRecord.value.proof.forEach((proof) => {
+      formData.append("proof", proof.raw); // proof 中包含文件对象 raw
+    });
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}records/submit/`,
+        formData,
+        {
+          withCredentials: true, // 添加 withCredentials
+          headers: {
+            "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
+            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
+          },
+        }
+      );
+
+      if (res.status === "success") {
+        await getRecords( records );
+        ElMessage.success("上传记录成功!");
+        reportDialogVisible.value = false;
+      }
+    } catch (error) {
+      ElMessage.error(error.response?.data?.error || "上传记录失败，请稍后再试")
+    }
+  };
+
+  // 生成PDF
+  const generatepdf = async (ReportID) => {
+    const csrftoken = await getCSRFToken();
+    const formData = new FormData();
+    formData.append('ReportID', ReportID);
+
+    fetch(`${BASE_URL}records/GeneratePDF/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
+        body: formData,
+        credentials: 'include'
+    })
+    .then(response => {
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = 'default.pdf'; 
+
+        if (disposition) {
+            // 尝试匹配filename*格式
+            const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
+            if (filenameStarMatch && filenameStarMatch[1]) {
+                // 解码并处理 '%' 进行替换
+                filename = decodeURIComponent(filenameStarMatch[1].replace(/\+/g, '%20'));
+            } else {
+                // 处理非编码文件名的情况
+                const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, ''); // 清除引号
+                }
+            }
+        }
+        return response.blob().then(blob => {
+            return { blob, filename };
+        });
+    })
+    .then(({ blob, filename }) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename; // 使用提取的文件名
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url); // 释放Blob对象
+        ElMessage.success("生成PDF成功!");
+    })
+    .catch(error => {
+        ElMessage.error("生成PDF失败!");
+    });
+  };
 
 
 
@@ -183,6 +293,9 @@ const generatepdf = async (ReportID) => {
   return {
     getReports,
     getRecords,
+    getCompetitionName,
+    submitReport,
+    submitRecord,
     approveReport,
     rejectReport,
     approveRecord,
