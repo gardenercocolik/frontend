@@ -126,6 +126,43 @@ export const useCompeition = () => {
     }
   };
 
+  // 生成PDF
+  const generatepdf = async (ReportID) => {
+    const csrftoken = await getCSRFToken();
+    const formData = new FormData();
+    formData.append('ReportID', ReportID);
+
+    fetch(`${BASE_URL}records/GeneratePDF/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
+        body: formData,
+        credentials: 'include'
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob(); // 将响应转为Blob对象
+        }
+        throw new Error('生成PDF失败!');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'hello.pdf'; // 指定下载文件名
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url); // 释放Blob对象
+        ElMessage.success("生成PDF成功!");
+    })
+    .catch(error => {
+        ElMessage.error("生成PDF失败!");
+    });
+};
+
+
   return {
     getReports,
     getRecords,
@@ -133,5 +170,6 @@ export const useCompeition = () => {
     rejectReport,
     approveRecord,
     rejectRecord,
+    generatepdf,
   };
 };

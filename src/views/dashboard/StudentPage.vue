@@ -231,7 +231,7 @@ import { ElMessage } from "element-plus";
 import axios from "axios";
 import NavBar from "@/components/NavBar.vue";
 import { useCompeition } from "../../composables/useCompeition";
-const { getRecords, getReports } = useCompeition();
+const { getRecords, getReports, generatepdf } = useCompeition();
 
 // API URL
 const API_URL = "http://localhost:18000/dashboard/";
