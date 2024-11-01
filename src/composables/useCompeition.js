@@ -126,41 +126,72 @@ export const useCompeition = () => {
     }
   };
 
-  // 生成PDF
-  const generatepdf = async (ReportID) => {
-    const csrftoken = await getCSRFToken();
-    const formData = new FormData();
-    formData.append('ReportID', ReportID);
+// 生成PDF
+const generatepdf = async (ReportID) => {
+  const csrftoken = await getCSRFToken();
+  const formData = new FormData();
+  formData.append('ReportID', ReportID);
 
-    fetch(`${BASE_URL}records/GeneratePDF/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-        },
-        body: formData,
-        credentials: 'include'
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.blob(); // 将响应转为Blob对象
-        }
-        throw new Error('生成PDF失败!');
-    })
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'hello.pdf'; // 指定下载文件名
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url); // 释放Blob对象
-        ElMessage.success("生成PDF成功!");
-    })
-    .catch(error => {
-        ElMessage.error("生成PDF失败!");
-    });
+  fetch(`${BASE_URL}records/GeneratePDF/`, {
+      method: 'POST',
+      headers: {
+          'X-CSRFToken': csrftoken,
+      },
+      body: formData,
+      credentials: 'include'
+  })
+  .then(response => {
+      console.log("响应状态:", response.ok); // 记录响应状态
+      const disposition = response.headers.get('Content-Disposition');
+      console.log("Content-Disposition:", disposition); // 记录 Content-Disposition 头部
+
+      let filename = 'default.pdf'; 
+
+      if (disposition) {
+          console.log("分析 Content-Disposition 以获取文件名...");
+
+          // 尝试匹配filename*格式
+          const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
+          if (filenameStarMatch && filenameStarMatch[1]) {
+              // 解码并处理 '%' 进行替换
+              filename = decodeURIComponent(filenameStarMatch[1].replace(/\+/g, '%20'));
+              console.log("从 filename* 获取的文件名:", filename); // 记录从 filename* 解析出的文件名
+          } else {
+              // 处理非编码文件名的情况
+              const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+              if (filenameMatch && filenameMatch[1]) {
+                  filename = filenameMatch[1].replace(/['"]/g, ''); // 清除引号
+                  console.log("从 filename 获取的文件名:", filename); // 记录从 filename 解析出的文件名
+              }
+          }
+      } else {
+          console.warn("未找到 Content-Disposition 头部");
+      }
+
+      return response.blob().then(blob => {
+          console.log("开始下载文件:", filename); // 记录即将下载的文件名
+          return { blob, filename };
+      });
+  })
+  .then(({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename; // 使用提取的文件名
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url); // 释放Blob对象
+      ElMessage.success("生成PDF成功!");
+  })
+  .catch(error => {
+      console.error("生成PDF失败:", error); // 记录错误信息
+      ElMessage.error("生成PDF失败!");
+  });
 };
+
+
+
 
 
   return {
