@@ -137,7 +137,7 @@
       <el-form ref="reportForm" :model="newReport" label-width="120px">
         <!-- 比赛级别选择,根据选择的比赛级别，动态获取比赛名 -->
         <el-form-item label="比赛级别">
-          <el-select v-model="newReport.level" placeholder="请选择比赛级别" @change="handlegetCompetitionName">
+          <el-select v-model="newReport.level" placeholder="请选择比赛级别" @change="handleGetCompetitionName">
             <el-option label="S" value="S"></el-option>
             <el-option label="A+" value="A+"></el-option>
             <el-option label="A" value="A"></el-option>
