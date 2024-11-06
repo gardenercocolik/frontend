@@ -4,7 +4,7 @@ import axios from 'axios';
 export const useUserStore = defineStore('user', {
   state: () => ({
     username: localStorage.getItem('username') || '',
-    identity: localStorage.getItem('identity') || '',
+    identity: localStorage.getItem('identity') || 'guest',
     isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
     userAvatar: '',  // 用户头像（如果有）
   }),
