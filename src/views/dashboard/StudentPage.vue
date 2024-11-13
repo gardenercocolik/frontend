@@ -166,7 +166,7 @@
 
         <!-- 提交表单 -->
         <el-form-item>
-          <el-button type="primary" @click="handlesubmitReport">提交</el-button>
+          <el-button type="primary" @click="handleSubmitReport">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -217,7 +217,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handlesubmitRecord">提交</el-button>
+          <el-button type="primary" @click="handleSubmitRecord">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
