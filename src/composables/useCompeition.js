@@ -161,6 +161,7 @@ export const useCompeition = () => {
     formData.append('competition_start', newReport.value.competition_start);
     formData.append('competition_end', newReport.value.competition_end);
     formData.append('level', newReport.value.level);
+    formData.append('instructor', newReport.value.instructor);
 
     try {
       const res = await axios.post(

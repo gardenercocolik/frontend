@@ -164,6 +164,11 @@
           <el-date-picker v-model="dateRange" type="datetimerange" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" start-placeholder="开始日期" end-placeholder="结束日期" @change="handleDateChange"></el-date-picker>
         </el-form-item>
 
+        <!-- 指导老师 -->
+         <el-form-item label="指导老师">
+          <el-input v-model="newReport.instructor" placeholder="请输入指导老师"></el-input>
+         </el-form-item>
+
         <!-- 提交表单 -->
         <el-form-item>
           <el-button type="primary" @click="handleSubmitReport">提交</el-button>
@@ -250,6 +255,7 @@ const newReport = ref({
   competition_start: "",
   competition_end: "",
   level: "",
+  instructor: "",
 });
 
 const newRecord = ref({
@@ -314,6 +320,7 @@ const resetNewReport = () => {
     competition_start: "",
     competition_end: "",
     level: "",
+    instructor: "",
   };
 };
 
@@ -349,7 +356,7 @@ const handleGetCompetitionName = async (level) => {
 
 // 提交报备
 const handleSubmitReport = async () => {
-  if (!newReport.value.name || !newReport.value.competition_start || !newReport.value.competition_end || !newReport.value.level) {
+  if (!newReport.value.name || !newReport.value.competition_start || !newReport.value.competition_end || !newReport.value.level || !newReport.value.instructor) {
     ElMessage.error("请填写所有必填项!!!");
     return;
   }
