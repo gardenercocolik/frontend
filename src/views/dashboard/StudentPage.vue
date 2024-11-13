@@ -287,7 +287,7 @@ const filteredReports = computed(() => {
 // 计算状态过滤的记录列表
 const filteredRecords = computed(() => {
   return {
-    waiting: records.value.filter(item => item.status === 'approved_record'),
+    waiting: records.value.filter(item => item.status === 'approved_report'),
     pending: records.value.filter(item => item.status === 'pending_record'),
     rejected: records.value.filter(item => item.status === 'rejected_record'),
     approved: records.value.filter(item => item.status === 'approved_record'),
