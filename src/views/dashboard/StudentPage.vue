@@ -11,40 +11,106 @@
 
       <el-col :span="20">
         <div v-if="activeTab === '1'" class="right-col">
-          <el-row style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="font-size: 24px;">竞赛报备</h2>
-            <el-button type="primary" @click="showReportDialog" style="font-size: 18px; padding: 20px;">创建报备</el-button>
+          <el-row
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            "
+          >
+            <h2 style="font-size: 24px">竞赛报备</h2>
+            <el-button
+              type="primary"
+              @click="showReportDialog"
+              style="font-size: 18px; padding: 20px"
+              >创建报备</el-button
+            >
           </el-row>
           <div>
             <el-collapse v-model="activeNamesReport">
               <el-collapse-item title="待审核 (Pending)" name="pending_report">
-                <el-table v-if="filteredReports.pending.length" :data="filteredReports.pending" style="width: 100%">
+                <el-table
+                  v-if="filteredReports.pending.length"
+                  :data="filteredReports.pending"
+                  style="width: 100%"
+                >
                   <el-table-column prop="name" label="比赛名"></el-table-column>
-                  <el-table-column prop="competition_start" label="比赛开始时间"></el-table-column>
-                  <el-table-column prop="competition_end" label="比赛结束时间"></el-table-column>
-                  <el-table-column prop="report_date" label="报备提交时间"></el-table-column>
+                  <el-table-column
+                    prop="competition_start"
+                    label="比赛开始时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="competition_end"
+                    label="比赛结束时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="report_date"
+                    label="报备提交时间"
+                  ></el-table-column>
                   <el-table-column prop="status" label="状态"></el-table-column>
+                  <el-table-column label="操作" align="center">
+                    <template #default="{ row }">
+                      <el-button
+                        type="primary"
+                        @click="handleDeleteReport(row.ReportID)"
+                        :icon="Delete"
+                      />
+                    </template>
+                  </el-table-column>
                 </el-table>
                 <div v-else>无待报备记录</div>
               </el-collapse-item>
 
-              <el-collapse-item title="已拒绝 (Rejected)" name="rejected_report">
-                <el-table v-if="filteredReports.rejected.length" :data="filteredReports.rejected" style="width: 100%">
+              <el-collapse-item
+                title="已拒绝 (Rejected)"
+                name="rejected_report"
+              >
+                <el-table
+                  v-if="filteredReports.rejected.length"
+                  :data="filteredReports.rejected"
+                  style="width: 100%"
+                >
                   <el-table-column prop="name" label="比赛名"></el-table-column>
-                  <el-table-column prop="competition_start" label="比赛开始时间"></el-table-column>
-                  <el-table-column prop="competition_end" label="比赛结束时间"></el-table-column>
-                  <el-table-column prop="report_date" label="报备提交时间"></el-table-column>
+                  <el-table-column
+                    prop="competition_start"
+                    label="比赛开始时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="competition_end"
+                    label="比赛结束时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="report_date"
+                    label="报备提交时间"
+                  ></el-table-column>
                   <el-table-column prop="status" label="状态"></el-table-column>
                 </el-table>
                 <div v-else>无已拒绝记录</div>
               </el-collapse-item>
 
-              <el-collapse-item title="已批准 (Approved)" name="approved_report">
-                <el-table v-if="filteredReports.approved.length" :data="filteredReports.approved" style="width: 100%">
+              <el-collapse-item
+                title="已批准 (Approved)"
+                name="approved_report"
+              >
+                <el-table
+                  v-if="filteredReports.approved.length"
+                  :data="filteredReports.approved"
+                  style="width: 100%"
+                >
                   <el-table-column prop="name" label="比赛名"></el-table-column>
-                  <el-table-column prop="competition_start" label="比赛开始时间"></el-table-column>
-                  <el-table-column prop="competition_end" label="比赛结束时间"></el-table-column>
-                  <el-table-column prop="report_date" label="报备提交时间"></el-table-column>
+                  <el-table-column
+                    prop="competition_start"
+                    label="比赛开始时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="competition_end"
+                    label="比赛结束时间"
+                  ></el-table-column>
+                  <el-table-column
+                    prop="report_date"
+                    label="报备提交时间"
+                  ></el-table-column>
                   <el-table-column prop="status" label="状态"></el-table-column>
                 </el-table>
                 <div v-else>无已批准记录</div>
@@ -55,38 +121,78 @@
 
         <!-- 竞赛记录 -->
         <div v-if="activeTab === '2'" class="right-col">
-          <h2 style="padding-bottom: 20px;">竞赛记录</h2>
+          <h2 style="padding-bottom: 20px">竞赛记录</h2>
           <div class="total-participation">
-            <span style="font-size: 16px;">有效的竞赛记录: {{ totalParticipationCount }}</span>
+            <span style="font-size: 16px"
+              >有效的竞赛记录: {{ totalParticipationCount }}</span
+            >
           </div>
           <el-collapse v-model="activeNamesRecord">
             <el-collapse-item title="已批准 (Approved)" name="approved_record">
-              <el-table v-if="filteredRecords.approved.length" :data="filteredRecords.approved" style="width: 100%">
+              <el-table
+                v-if="filteredRecords.approved.length"
+                :data="filteredRecords.approved"
+                style="width: 100%"
+              >
                 <el-table-column prop="name" label="比赛名"></el-table-column>
-                <el-table-column prop="level" label="比赛级别"></el-table-column>
-                <el-table-column prop="report_date" label="提交时间"></el-table-column>
-                <el-table-column prop="status" label="审核状态"></el-table-column>
+                <el-table-column
+                  prop="level"
+                  label="比赛级别"
+                ></el-table-column>
+                <el-table-column
+                  prop="report_date"
+                  label="提交时间"
+                ></el-table-column>
+                <el-table-column
+                  prop="status"
+                  label="审核状态"
+                ></el-table-column>
                 <el-table-column label="操作" align="center">
                   <template #default="{ row }">
                     <el-button-group>
-                      <el-button type="primary" @click="generatepdf(row.ReportID)" style = "background-color: green;">生成pdf</el-button>
+                      <el-button
+                        type="primary"
+                        @click="generatepdf(row.ReportID)"
+                        style="background-color: green"
+                        >生成pdf</el-button
+                      >
                     </el-button-group>
                   </template>
                 </el-table-column>
               </el-table>
               <div v-else>无已批准记录</div>
             </el-collapse-item>
-                        
-            <el-collapse-item title="记录待上传 (Waiting)" name="waiting_record">
-              <el-table v-if="filteredRecords.waiting.length" :data="filteredRecords.waiting" style="width: 100%">
+
+            <el-collapse-item
+              title="记录待上传 (Waiting)"
+              name="waiting_record"
+            >
+              <el-table
+                v-if="filteredRecords.waiting.length"
+                :data="filteredRecords.waiting"
+                style="width: 100%"
+              >
                 <el-table-column prop="name" label="比赛名"></el-table-column>
-                <el-table-column prop="level" label="比赛级别"></el-table-column>
-                <el-table-column prop="report_date" label="提交时间"></el-table-column>
-                <el-table-column prop="status" label="审核状态"></el-table-column>
+                <el-table-column
+                  prop="level"
+                  label="比赛级别"
+                ></el-table-column>
+                <el-table-column
+                  prop="report_date"
+                  label="提交时间"
+                ></el-table-column>
+                <el-table-column
+                  prop="status"
+                  label="审核状态"
+                ></el-table-column>
                 <el-table-column label="操作" align="center">
                   <template #default="{ row }">
                     <el-button-group>
-                      <el-button type="primary" @click="showRecordDialog(row.ReportID)">上传记录</el-button>
+                      <el-button
+                        type="primary"
+                        @click="showRecordDialog(row.ReportID)"
+                        >上传记录</el-button
+                      >
                     </el-button-group>
                   </template>
                 </el-table-column>
@@ -95,15 +201,32 @@
             </el-collapse-item>
 
             <el-collapse-item title="待审核 (Pending)" name="pending_record">
-              <el-table v-if="filteredRecords.pending.length" :data="filteredRecords.pending" style="width: 100%">
+              <el-table
+                v-if="filteredRecords.pending.length"
+                :data="filteredRecords.pending"
+                style="width: 100%"
+              >
                 <el-table-column prop="name" label="比赛名"></el-table-column>
-                <el-table-column prop="level" label="比赛级别"></el-table-column>
-                <el-table-column prop="report_date" label="提交时间"></el-table-column>
-                <el-table-column prop="status" label="审核状态"></el-table-column>
+                <el-table-column
+                  prop="level"
+                  label="比赛级别"
+                ></el-table-column>
+                <el-table-column
+                  prop="report_date"
+                  label="提交时间"
+                ></el-table-column>
+                <el-table-column
+                  prop="status"
+                  label="审核状态"
+                ></el-table-column>
                 <el-table-column label="操作" align="center">
                   <template #default="{ row }">
                     <el-button-group>
-                      <el-button type="primary" @click="showRecordDialog(row.ReportID)">重新上传</el-button>
+                      <el-button
+                        type="primary"
+                        @click="showRecordDialog(row.ReportID)"
+                        >重新上传</el-button
+                      >
                     </el-button-group>
                   </template>
                 </el-table-column>
@@ -112,15 +235,32 @@
             </el-collapse-item>
 
             <el-collapse-item title="已拒绝 (Rejected)" name="rejected_record">
-              <el-table v-if="filteredRecords.rejected.length" :data="filteredRecords.rejected" style="width: 100%">
+              <el-table
+                v-if="filteredRecords.rejected.length"
+                :data="filteredRecords.rejected"
+                style="width: 100%"
+              >
                 <el-table-column prop="name" label="比赛名"></el-table-column>
-                <el-table-column prop="level" label="比赛级别"></el-table-column>
-                <el-table-column prop="report_date" label="提交时间"></el-table-column>
-                <el-table-column prop="status" label="审核状态"></el-table-column>
+                <el-table-column
+                  prop="level"
+                  label="比赛级别"
+                ></el-table-column>
+                <el-table-column
+                  prop="report_date"
+                  label="提交时间"
+                ></el-table-column>
+                <el-table-column
+                  prop="status"
+                  label="审核状态"
+                ></el-table-column>
                 <el-table-column label="操作" align="center">
                   <template #default="{ row }">
                     <el-button-group>
-                      <el-button type="primary" @click="showRecordDialog(row.ReportID)">重新上传</el-button>
+                      <el-button
+                        type="primary"
+                        @click="showRecordDialog(row.ReportID)"
+                        >重新上传</el-button
+                      >
                     </el-button-group>
                   </template>
                 </el-table-column>
@@ -137,7 +277,11 @@
       <el-form ref="reportForm" :model="newReport" label-width="120px">
         <!-- 比赛级别选择,根据选择的比赛级别，动态获取比赛名 -->
         <el-form-item label="比赛级别">
-          <el-select v-model="newReport.level" placeholder="请选择比赛级别" @change="handleGetCompetitionName">
+          <el-select
+            v-model="newReport.level"
+            placeholder="请选择比赛级别"
+            @change="handleGetCompetitionName"
+          >
             <el-option label="S" value="S"></el-option>
             <el-option label="A+" value="A+"></el-option>
             <el-option label="A" value="A"></el-option>
@@ -150,23 +294,39 @@
         <!-- 比赛名 -->
         <el-form-item label="比赛名称">
           <template v-if="newReport.level === 'Other'">
-            <el-input v-model="newReport.name" placeholder="请输入比赛名称"></el-input>
+            <el-input
+              v-model="newReport.name"
+              placeholder="请输入比赛名称"
+            ></el-input>
           </template>
           <template v-else>
             <el-select v-model="newReport.name" placeholder="请选择比赛名称">
-              <el-option v-for="name in comNames" :key="name" :label="name" :value="name"></el-option>
+              <el-option
+                v-for="name in comNames"
+                :key="name"
+                :label="name"
+                :value="name"
+              ></el-option>
             </el-select>
           </template>
         </el-form-item>
 
         <!-- 比赛时间 -->
         <el-form-item label="比赛时间">
-          <el-date-picker v-model="dateRange" type="datetimerange" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" start-placeholder="开始日期" end-placeholder="结束日期" @change="handleDateChange"></el-date-picker>
+          <el-date-picker
+            v-model="dateRange"
+            type="datetimerange"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            @change="handleDateChange"
+          ></el-date-picker>
         </el-form-item>
 
         <!-- 提交表单 -->
         <el-form-item>
-          <el-button type="primary" @click="handlesubmitReport">提交</el-button>
+          <el-button type="primary" @click="handleSubmitReport">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -175,7 +335,16 @@
     <el-dialog title="上传竞赛记录" v-model="recordDialogVisible" width="45%">
       <el-form ref="recordForm" :model="newRecord" label-width="120px">
         <el-form-item label="比赛照片">
-          <el-upload :on-change="handleImageChange" :on-remove="handleRemove" :show-file-list="true" :file-list="formattedFileList(newRecord.photos)" :auto-upload="false" :limit="3" accept="image/*" :before-upload="beforeUpload">
+          <el-upload
+            :on-change="handleImageChange"
+            :on-remove="handleRemove"
+            :show-file-list="true"
+            :file-list="formattedFileList(newRecord.photos)"
+            :auto-upload="false"
+            :limit="3"
+            accept="image/*"
+            :before-upload="beforeUpload"
+          >
             <template #trigger>
               <el-button type="primary">选择图片</el-button>
             </template>
@@ -184,19 +353,39 @@
             </template>
           </el-upload>
         </el-form-item>
-        
+
         <el-form-item label="比赛总结">
-          <el-input type="textarea" v-model="newRecord.summary" :rows="6" :maxlength="250" show-word-limit placeholder="包含竞赛收获,竞赛名次,不超过250字"></el-input>
-          <div class="word-count">字数: {{ newRecord.summary.length }} / 250</div>
+          <el-input
+            type="textarea"
+            v-model="newRecord.summary"
+            :rows="6"
+            :maxlength="250"
+            show-word-limit
+            placeholder="包含竞赛收获,竞赛名次,不超过250字"
+          ></el-input>
+          <div class="word-count">
+            字数: {{ newRecord.summary.length }} / 250
+          </div>
         </el-form-item>
 
         <el-form-item label="成绩证明">
-          <el-upload :on-change="handleCaChange" :on-remove="handleCaRemove" :show-file-list="true" :file-list="formattedFileList(newRecord.certificates)" :auto-upload="false" :limit="1" accept="image/*" :before-upload="beforeUpload">
+          <el-upload
+            :on-change="handleCaChange"
+            :on-remove="handleCaRemove"
+            :show-file-list="true"
+            :file-list="formattedFileList(newRecord.certificates)"
+            :auto-upload="false"
+            :limit="1"
+            accept="image/*"
+            :before-upload="beforeUpload"
+          >
             <template #trigger>
               <el-button type="primary">选择图片</el-button>
             </template>
             <template #tip>
-              <div class="el-upload__tip">请上传获奖证书图片,若无请上传其他名次证明（至多1张）</div>
+              <div class="el-upload__tip">
+                请上传获奖证书图片,若无请上传其他名次证明（至多1张）
+              </div>
             </template>
           </el-upload>
         </el-form-item>
@@ -206,32 +395,50 @@
         </el-form-item>
 
         <el-form-item label="报销凭证">
-          <el-upload :on-change="handlePrChange" :on-remove="handlePrRemove" :show-file-list="true" :file-list="formattedFileList(newRecord.proof)" :auto-upload="false" :limit="3" accept="image/*" :before-upload="beforeUpload">
+          <el-upload
+            :on-change="handlePrChange"
+            :on-remove="handlePrRemove"
+            :show-file-list="true"
+            :file-list="formattedFileList(newRecord.proof)"
+            :auto-upload="false"
+            :limit="3"
+            accept="image/*"
+            :before-upload="beforeUpload"
+          >
             <template #trigger>
               <el-button type="primary">选择图片</el-button>
             </template>
             <template #tip>
-              <div class="el-upload__tip">请上传报销凭证（发票、支票等），不超过 3 张</div>
+              <div class="el-upload__tip">
+                请上传报销凭证（发票、支票等），不超过 3 张
+              </div>
             </template>
           </el-upload>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handlesubmitRecord">提交</el-button>
+          <el-button type="primary" @click="handleSubmitRecord">提交</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
   </div>
 </template>
 
-
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import { useCompeition } from "../../composables/useCompeition";
-
-const { getRecords, getReports, getCompetitionName, submitReport, submitRecord, generatepdf } = useCompeition();
+import { Delete } from "@element-plus/icons-vue";
+const {
+  getRecords,
+  getReports,
+  getCompetitionName,
+  submitReport,
+  submitRecord,
+  generatepdf,
+  deleteReport,
+} = useCompeition();
 
 // 响应式数据
 const activeTab = ref("1");
@@ -242,8 +449,17 @@ const dateRange = ref([]); // 存储选择的日期范围
 const reports = ref([]); // 报备列表
 const records = ref([]); // 记录列表
 
-const activeNamesReport = ['pending_report', 'rejected_report', 'approved_report']; // 默认展开的报备面板
-const activeNamesRecord = ['waiting_record', 'pending_record', 'approved_record', 'rejected_record']; // 默认展开的记录面板
+const activeNamesReport = [
+  "pending_report",
+  "rejected_report",
+  "approved_report",
+]; // 默认展开的报备面板
+const activeNamesRecord = [
+  "waiting_record",
+  "pending_record",
+  "approved_record",
+  "rejected_record",
+]; // 默认展开的记录面板
 
 const newReport = ref({
   name: "",
@@ -269,8 +485,8 @@ const sortOrder = ref("descending"); // 排序方式
 // 计算排序后的报备列表
 const sortedReports = computed(() => {
   return [...reports.value].sort((a, b) => {
-    const dateA = new Date(a.report_date).getTime(); 
-    const dateB = new Date(b.report_date).getTime(); 
+    const dateA = new Date(a.report_date).getTime();
+    const dateB = new Date(b.report_date).getTime();
     return sortOrder.value === "descending" ? dateB - dateA : dateA - dateB;
   });
 });
@@ -278,25 +494,32 @@ const sortedReports = computed(() => {
 // 计算状态过滤的报备列表
 const filteredReports = computed(() => {
   return {
-    pending: sortedReports.value.filter(item => item.status === 'pending_report'),
-    rejected: sortedReports.value.filter(item => item.status === 'rejected_report'),
-    approved: sortedReports.value.filter(item => item.status === 'approved_report'),
+    pending: sortedReports.value.filter(
+      (item) => item.status === "pending_report"
+    ),
+    rejected: sortedReports.value.filter(
+      (item) => item.status === "rejected_report"
+    ),
+    approved: sortedReports.value.filter(
+      (item) => item.status === "approved_report"
+    ),
   };
 });
 
 // 计算状态过滤的记录列表
 const filteredRecords = computed(() => {
   return {
-    waiting: records.value.filter(item => item.status === 'approved_record'),
-    pending: records.value.filter(item => item.status === 'pending_record'),
-    rejected: records.value.filter(item => item.status === 'rejected_record'),
-    approved: records.value.filter(item => item.status === 'approved_record'),
+    waiting: records.value.filter((item) => item.status === "approved_report"),
+    pending: records.value.filter((item) => item.status === "pending_record"),
+    rejected: records.value.filter((item) => item.status === "rejected_record"),
+    approved: records.value.filter((item) => item.status === "approved_record"),
   };
 });
 
 // 计算参赛数量
 const totalParticipationCount = computed(() => {
-  return records.value.filter(record => record.status === "approved_record").length; 
+  return records.value.filter((record) => record.status === "approved_record")
+    .length;
 });
 
 /** 方法 */
@@ -349,21 +572,41 @@ const handleGetCompetitionName = async (level) => {
 
 // 提交报备
 const handleSubmitReport = async () => {
-  if (!newReport.value.name || !newReport.value.competition_start || !newReport.value.competition_end || !newReport.value.level) {
+  if (
+    !newReport.value.name ||
+    !newReport.value.competition_start ||
+    !newReport.value.competition_end ||
+    !newReport.value.level
+  ) {
     ElMessage.error("请填写所有必填项!!!");
     return;
   }
   await submitReport(newReport, reportDialogVisible);
+  getReports(reports);
   resetNewReport();
+};
+
+// 删除报备
+const handleDeleteReport = async (ReportID) => {
+  await deleteReport(ReportID);
+  getReports(reports);
 };
 
 // 提交竞赛记录
 const handleSubmitRecord = async () => {
-  if (!newRecord.value.summary || !newRecord.value.reimbursement || !newRecord.value.photos.length || !newRecord.value.certificates.length || !newRecord.value.proof.length || !newRecord.value.ReportID) {
+  if (
+    !newRecord.value.summary ||
+    !newRecord.value.reimbursement ||
+    !newRecord.value.photos.length ||
+    !newRecord.value.certificates.length ||
+    !newRecord.value.proof.length ||
+    !newRecord.value.ReportID
+  ) {
     ElMessage.error("请填写所有必填项!!!");
     return;
   }
   await submitRecord(newRecord, recordDialogVisible);
+  getRecords(records);
   resetNewRecord();
 };
 
@@ -397,18 +640,19 @@ const handleImageChange = (file) => {
 };
 
 const handleRemove = (file, fileList) => {
-  newRecord.value.photos = fileList; 
+  newRecord.value.photos = fileList;
 };
 
 // 格式化文件列表
 const formattedFileList = (files) => {
-  return files.map(file => {
+  return files.map((file) => {
     return {
       ...file,
-      name: file.name.length > 10 ? file.name.substring(0, 10) + '...' : file.name // 限制显示的文件名长度
+      name:
+        file.name.length > 10 ? file.name.substring(0, 10) + "..." : file.name, // 限制显示的文件名长度
     };
   });
-}
+};
 
 // 处理证书上传
 const handleCaChange = (file) => {
@@ -418,7 +662,7 @@ const handleCaChange = (file) => {
 };
 
 const handleCaRemove = (file, fileList) => {
-  newRecord.value.certificates = fileList; 
+  newRecord.value.certificates = fileList;
 };
 
 // 处理凭证上传
@@ -429,7 +673,7 @@ const handlePrChange = (file) => {
 };
 
 const handlePrRemove = (file, fileList) => {
-  newRecord.value.proof = fileList; 
+  newRecord.value.proof = fileList;
 };
 
 // 将创建报备中输入的比赛时间范围转化为开始时间和结束时间
@@ -438,9 +682,6 @@ const handleDateChange = (value) => {
   newReport.value.competition_end = value[1]; // 获取结束日期
 };
 </script>
-
-
-
 
 <style scoped>
 .app {

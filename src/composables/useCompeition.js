@@ -9,130 +9,144 @@ export const useCompeition = () => {
   // 获取 CSRF 令牌的函数
   const getCSRFToken = async () => {
     try {
-        const res = await axios.get(`${URL}csrf/`, { withCredentials: true });
-        return res.data.csrftoken;
+      const res = await axios.get(`${URL}csrf/`, { withCredentials: true });
+      return res.data.csrftoken;
     } catch (error) {
-        ElMessage.error('获取 CSRF 令牌失败');
-        return null;
+      ElMessage.error("获取 CSRF 令牌失败");
+      return null;
     }
-  };  
+  };
   // 获取报备记录列表
-  const getReports = async ( reports ) => {
+  const getReports = async (reports) => {
     try {
-        const csrftoken = await getCSRFToken();
-        const res = await axios.post(`${BASE_URL}reports/`, {},{
+      const csrftoken = await getCSRFToken();
+      const res = await axios.post(
+        `${BASE_URL}reports/`,
+        {},
+        {
           headers: {
-            'X-CSRFToken': csrftoken,
+            "X-CSRFToken": csrftoken,
           },
           withCredentials: true,
-        });
-        reports.value = res.data.data;
+        }
+      );
+      reports.value = res.data.data;
     } catch (error) {
       // ElMessage.error("获取报备记录列表失败!");
     }
   };
-  
+
   // 获取记录列表
-  const getRecords = async ( records ) => {
+  const getRecords = async (records) => {
     try {
-        const csrftoken = await getCSRFToken();
-        const res = await axios.post(`${BASE_URL}records/`, {},{
+      const csrftoken = await getCSRFToken();
+      const res = await axios.post(
+        `${BASE_URL}records/`,
+        {},
+        {
           headers: {
-            'X-CSRFToken': csrftoken,
+            "X-CSRFToken": csrftoken,
           },
           withCredentials: true,
-        });
-        records.value = res.data.data;
+        }
+      );
+      records.value = res.data.data;
     } catch (error) {
       // ElMessage.error("获取记录列表失败!");
     }
   };
-  
+
   // 审核通过报备
   const approveReport = async (ReportID) => {
     try {
       const csrftoken = await getCSRFToken();
-          const res = await axios.post(`${BASE_URL}reports/approve/`, 
-            { ReportID },
-            {
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
-            withCredentials: true,
-          });
-        ElMessage.success("报备审核通过!");
-        await getReports();
+      const res = await axios.post(
+        `${BASE_URL}reports/approve/`,
+        { ReportID },
+        {
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
+      ElMessage.success("报备审核通过!");
+      await getReports();
     } catch (error) {
       ElMessage.error("审核失败!");
     }
   };
-  
+
   // 审核拒绝报备
   const rejectReport = async (ReportID) => {
     try {
       const csrftoken = await getCSRFToken();
-          const res = await axios.post(`${BASE_URL}reports/reject/`, 
-            { ReportID },
-            {
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
-            withCredentials: true,
-          });
+      const res = await axios.post(
+        `${BASE_URL}reports/reject/`,
+        { ReportID },
+        {
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
       ElMessage.success("报备审核拒绝!");
       await getReports();
     } catch (error) {
       ElMessage.error("审核失败!");
     }
   };
-  
+
   // 审核通过记录
   const approveRecord = async (ReportID) => {
     try {
       const csrftoken = await getCSRFToken();
-          const res = await axios.post(`${BASE_URL}records/approve/`, 
-            { ReportID },
-            {
-            headers: {
-              'X-CSRFToken': csrftoken,
-            },
-            withCredentials: true,
-          });
+      const res = await axios.post(
+        `${BASE_URL}records/approve/`,
+        { ReportID },
+        {
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
       ElMessage.success("记录审核通过!");
-      await getRecords();
     } catch (error) {
       ElMessage.error("审核失败!");
     }
   };
-  
+
   // 审核拒绝记录
   const rejectRecord = async (ReportID) => {
     try {
       const csrftoken = await getCSRFToken();
-      const res = await axios.post(`${BASE_URL}records/reject/`, 
+      const res = await axios.post(
+        `${BASE_URL}records/reject/`,
         { ReportID },
         {
-        headers: {
-          'X-CSRFToken': csrftoken,
-        },
-        withCredentials: true,
-      });
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
       ElMessage.success("记录审核拒绝!");
-      await getRecords();
     } catch (error) {
       ElMessage.error("审核失败!");
     }
   };
 
   // 获取比赛名
-  const getCompetitionName = async ( newReport, comNames ) => {
+  const getCompetitionName = async (newReport, comNames) => {
     const csrftoken = await getCSRFToken();
     if (newReport.value.level === "other") {
       return;
     }
     try {
       const formData = new FormData();
-      formData.append('level', newReport.value.level); // 将数据添加到 FormData 对象中
+      formData.append("level", newReport.value.level); // 将数据添加到 FormData 对象中
 
       const res = await axios.post(
         `${BASE_URL}reports/return-competition-name/`,
@@ -140,8 +154,8 @@ export const useCompeition = () => {
         {
           withCredentials: true,
           headers: {
-            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
-          }
+            "X-CSRFToken": csrftoken, // 添加 CSRF 令牌
+          },
         }
       );
 
@@ -152,44 +166,60 @@ export const useCompeition = () => {
   };
 
   // 提交报备
-  const submitReport = async ( newReport, reportDialogVisible ) => {
-
+  const submitReport = async (newReport, reportDialogVisible) => {
     const csrftoken = await getCSRFToken();
     // 创建 FormData 对象
     const formData = new FormData();
-    formData.append('name', newReport.value.name);
-    formData.append('competition_start', newReport.value.competition_start);
-    formData.append('competition_end', newReport.value.competition_end);
-    formData.append('level', newReport.value.level);
+    formData.append("name", newReport.value.name);
+    formData.append("competition_start", newReport.value.competition_start);
+    formData.append("competition_end", newReport.value.competition_end);
+    formData.append("level", newReport.value.level);
 
     try {
       const res = await axios.post(
         `${BASE_URL}reports/create/`,
-        formData,  // 使用 FormData 作为请求体
+        formData, // 使用 FormData 作为请求体
         {
           withCredentials: true, // 添加 withCredentials
           headers: {
-            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
-          }
+            "X-CSRFToken": csrftoken, // 添加 CSRF 令牌
+          },
         }
       );
-      
-      if (res.status === "success") {
-        await getReports( reports );
+      console.log(res.data.status === "success");
+      if (res.data.status === "success") {
         ElMessage.success("报备成功!");
         reportDialogVisible.value = false;
       }
-      window.location.reload();
     } catch (error) {
       ElMessage.error(error.response?.data?.error || "报备失败，请稍后再试");
     }
   };
+  //移除报备
+  const deleteReport = async (ReportID) => {
+    const csrftoken = await getCSRFToken();
+    const formData = new FormData();
+    formData.append("ReportID", ReportID);
+    try {
+      const res = await axios.post(`${BASE_URL}reports/delete/`, formData, {
+        withCredentials: true,
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+      });
+      if (res.data.status === "success") {
+        ElMessage.success("删除报备成功!");
+      }
+    } catch (error) {
+      ElMessage.error("删除报备失败!");
+    }
+  };
 
   // 提交竞赛记录
-  const submitRecord = async ( newRecord, reportDialogVisible ) => {
+  const submitRecord = async (newRecord, reportDialogVisible) => {
     const csrftoken = await getCSRFToken();
     console.log(newRecord.value);
-    
+
     const formData = new FormData();
     formData.append("summary", newRecord.value.summary);
     console.log(newRecord.value.reimbursement);
@@ -212,25 +242,22 @@ export const useCompeition = () => {
     });
 
     try {
-      const res = await axios.post(
-        `${BASE_URL}records/submit/`,
-        formData,
-        {
-          withCredentials: true, // 添加 withCredentials
-          headers: {
-            "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
-            'X-CSRFToken': csrftoken // 添加 CSRF 令牌
-          },
-        }
-      );
+      const res = await axios.post(`${BASE_URL}records/submit/`, formData, {
+        withCredentials: true, // 添加 withCredentials
+        headers: {
+          "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
+          "X-CSRFToken": csrftoken, // 添加 CSRF 令牌
+        },
+      });
 
       if (res.status === "success") {
-        await getRecords( records );
         ElMessage.success("上传记录成功!");
         reportDialogVisible.value = false;
       }
     } catch (error) {
-      ElMessage.error(error.response?.data?.error || "上传记录失败，请稍后再试")
+      ElMessage.error(
+        error.response?.data?.error || "上传记录失败，请稍后再试"
+      );
     }
   };
 
@@ -238,41 +265,45 @@ export const useCompeition = () => {
   const generatepdf = async (ReportID) => {
     const csrftoken = await getCSRFToken();
     const formData = new FormData();
-    formData.append('ReportID', ReportID);
+    formData.append("ReportID", ReportID);
 
     fetch(`${BASE_URL}records/GeneratePDF/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-        },
-        body: formData,
-        credentials: 'include'
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrftoken,
+      },
+      body: formData,
+      credentials: "include",
     })
-    .then(response => {
-        const disposition = response.headers.get('Content-Disposition');
-        let filename = 'default.pdf'; 
+      .then((response) => {
+        const disposition = response.headers.get("Content-Disposition");
+        let filename = "default.pdf";
 
         if (disposition) {
-            // 尝试匹配filename*格式
-            const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
-            if (filenameStarMatch && filenameStarMatch[1]) {
-                // 解码并处理 '%' 进行替换
-                filename = decodeURIComponent(filenameStarMatch[1].replace(/\+/g, '%20'));
-            } else {
-                // 处理非编码文件名的情况
-                const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if (filenameMatch && filenameMatch[1]) {
-                    filename = filenameMatch[1].replace(/['"]/g, ''); // 清除引号
-                }
+          // 尝试匹配filename*格式
+          const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
+          if (filenameStarMatch && filenameStarMatch[1]) {
+            // 解码并处理 '%' 进行替换
+            filename = decodeURIComponent(
+              filenameStarMatch[1].replace(/\+/g, "%20")
+            );
+          } else {
+            // 处理非编码文件名的情况
+            const filenameMatch = disposition.match(
+              /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+            );
+            if (filenameMatch && filenameMatch[1]) {
+              filename = filenameMatch[1].replace(/['"]/g, ""); // 清除引号
             }
+          }
         }
-        return response.blob().then(blob => {
-            return { blob, filename };
+        return response.blob().then((blob) => {
+          return { blob, filename };
         });
-    })
-    .then(({ blob, filename }) => {
+      })
+      .then(({ blob, filename }) => {
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = filename; // 使用提取的文件名
         document.body.appendChild(a);
@@ -280,15 +311,11 @@ export const useCompeition = () => {
         a.remove();
         window.URL.revokeObjectURL(url); // 释放Blob对象
         ElMessage.success("生成PDF成功!");
-    })
-    .catch(error => {
+      })
+      .catch((error) => {
         ElMessage.error("生成PDF失败!");
-    });
+      });
   };
-
-
-
-
 
   return {
     getReports,
@@ -301,5 +328,6 @@ export const useCompeition = () => {
     approveRecord,
     rejectRecord,
     generatepdf,
+    deleteReport,
   };
 };

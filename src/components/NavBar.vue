@@ -1,7 +1,12 @@
 <template>
   <div>
     <el-header class="NavBar">
-      <el-row :gutter="0" align="middle" justify="space-between" class="full-width-row">
+      <el-row
+        :gutter="0"
+        align="middle"
+        justify="space-between"
+        class="full-width-row"
+      >
         <!-- 左侧：logo 和标题 -->
         <el-col :span="10">
           <div class="flex-box">
@@ -13,23 +18,44 @@
         <!-- 右侧：菜单或者用户操作 -->
         <el-col :span="10">
           <div class="right-box">
-            <el-icon v-if="isMobile" class="menu-icon" @click="toggleMobileMenu">
+            <el-icon
+              v-if="isMobile"
+              class="menu-icon"
+              @click="toggleMobileMenu"
+            >
               <Menu />
             </el-icon>
 
             <div v-else class="desktop-menu">
-              <el-button type="text" @click="goToHome" class="nav-button">首页</el-button>
-              <el-button type="text" @click="goToCompetition" class="nav-button">竞赛中心</el-button>
+              <el-button type="text" @click="goToHome" class="nav-button"
+                >首页</el-button
+              >
+              <el-button type="text" @click="goToNews" class="nav-button"
+                >新闻动态</el-button
+              >
+              <el-button type="text" @click="goToCompetition" class="nav-button"
+                >竞赛中心</el-button
+              >
 
-              <el-button v-if="!isLoggedIn" type="text" class="nav-button" @click="goToLogin">登录</el-button>
+              <el-button
+                v-if="!isLoggedIn"
+                type="text"
+                class="nav-button"
+                @click="goToLogin"
+                >登录</el-button
+              >
 
               <div v-else class="user-section">
                 <el-avatar :src="userAvatar" size="36" />
                 <el-dropdown @command="handleCommand" class="username-dropdown">
-                  <span class="username" @click="toggleUserMenu">{{ username }}</span>
+                  <span class="username" @click="toggleUserMenu">{{
+                    username
+                  }}</span>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                      <el-dropdown-item command="profile"
+                        >个人信息</el-dropdown-item
+                      >
                       <el-dropdown-item command="logout">登出</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -40,11 +66,21 @@
         </el-col>
       </el-row>
 
-      <el-drawer :model-value="mobileMenuVisible" direction="ltr" size="200px" custom-class="mobile-drawer">
+      <el-drawer
+        :model-value="mobileMenuVisible"
+        direction="ltr"
+        size="200px"
+        custom-class="mobile-drawer"
+      >
         <el-menu default-active="1" class="mobile-menu">
           <el-menu-item index="1" @click="goToHome">首页</el-menu-item>
-          <el-menu-item index="2" @click="goToCompetition">竞赛中心</el-menu-item>
-          <el-menu-item v-if="!isLoggedIn" index="3" @click="goToLogin">登录</el-menu-item>
+          <el-menu-item index="2" @click="goToNews">新闻动态</el-menu-item>
+          <el-menu-item index="3" @click="goToCompetition"
+            >竞赛中心</el-menu-item
+          >
+          <el-menu-item v-if="!isLoggedIn" index="3" @click="goToLogin"
+            >登录</el-menu-item
+          >
         </el-menu>
       </el-drawer>
     </el-header>
@@ -52,19 +88,26 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watchEffect, defineProps } from 'vue'; // 修改：导入 watchEffect
-import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores';
-import { useAuth } from '@/composables/useAuth';
-import { ElMessage } from 'element-plus';
-import { Menu } from '@element-plus/icons-vue';
-import defaultAvatar from '@/assets/default_avatar.png';
+import {
+  computed,
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watchEffect,
+  defineProps,
+} from "vue"; // 修改：导入 watchEffect
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores";
+import { useAuth } from "@/composables/useAuth";
+import { ElMessage } from "element-plus";
+import { Menu } from "@element-plus/icons-vue";
+import defaultAvatar from "@/assets/default_avatar.png";
 
 // Props
 const props = defineProps({
   title: {
     type: String,
-    default: '',
+    default: "",
   },
 });
 
@@ -87,11 +130,11 @@ const handleResize = () => {
 watchEffect(() => {
   const onResize = () => handleResize();
 
-  window.addEventListener('resize', onResize);
+  window.addEventListener("resize", onResize);
 
   // 清理事件监听器
   return () => {
-    window.removeEventListener('resize', onResize);
+    window.removeEventListener("resize", onResize);
   };
 });
 
@@ -100,33 +143,30 @@ const navigateTo = (path) => {
   router.push(path);
 };
 
-const goToLogin = () => navigateTo('/login');
-const goToHome = () => navigateTo('/');
+const goToLogin = () => navigateTo("/login");
+const goToHome = () => navigateTo("/");
+const goToNews = () => navigateTo("/news");
 const goToCompetition = () => {
   if (isLoggedIn.value) {
-    if (store.identity === 'student') {
-      navigateTo('/student');
-    }
-    else if (store.identity === 'teacher') {
-      navigateTo('/teacher');
+    if (store.identity === "student") {
+      navigateTo("/student");
+    } else if (store.identity === "teacher") {
+      navigateTo("/teacher");
     }
   } else {
-    ElMessage.error('请先登录');
-    navigateTo('/login');
+    ElMessage.error("请先登录");
+    navigateTo("/login");
   }
 };
 
 const handleCommand = (command) => {
-  if (command === 'logout') {
+  if (command === "logout") {
     logout();
   }
-  if (command === 'profile') {
-    navigateTo('/profile');
+  if (command === "profile") {
+    navigateTo("/profile");
   }
 };
-
-
-
 
 // 切换移动端菜单
 const toggleMobileMenu = () => {
@@ -143,10 +183,9 @@ onBeforeUnmount(() => {
 });
 </script>
 
-
 <style scoped>
 .NavBar {
-  background-color: #0A0A0A;
+  background-color: #0a0a0a;
   padding: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -170,7 +209,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 18px;
-  color: #E5EAF3;
+  color: #e5eaf3;
   margin-left: 10px;
 }
 .right-box {
