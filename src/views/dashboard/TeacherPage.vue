@@ -150,18 +150,25 @@
         <p>比赛名: {{ selectedRecord.name }}</p>
         <p>比赛级别: {{ selectedRecord.level }}</p>
         <p>比赛照片:</p>
-        <el-image v-for="photo in selectedRecord.photos" :key="photo" :src="photo" style="width: 100px; margin-right: 10px" :fit="'contain'" />
+        <div v-for="photo in selectedRecord.photos" :key="photo">
+          <button @click="fetchPhoto(photo)">查看详情</button>
+          <span style="margin-right: 10px"></span> <!-- 为了视觉效果，可以添加间隔 -->
+        </div>
         <p>比赛总结: {{ selectedRecord.summary }}</p>
         <p>成绩证明:</p>
-        <el-image :src="selectedRecord.certificate" style="width: 100px; margin-right: 10px" :fit="'contain'" />
+        <a :href="selectedRecord.certificate" target="_blank">{{ selectedRecord.certificate }}</a>
         <p>报销金额: {{ selectedRecord.reimbursement_amount }}</p>
         <p>报销凭证:</p>
-        <el-image v-for="proof in selectedRecord.proofs" :key="proof" :src="proof" style="width: 100px; margin-right: 10px" :fit="'contain'" />
+        <div v-for="proof in selectedRecord.proofs" :key="proof">
+          <a :href="proof" target="_blank">{{ proof }}</a>
+          <span style="margin-right: 10px"></span> <!-- 为了视觉效果，可以添加间隔 -->
+        </div>
       </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="recordDialogVisible = false">关闭</el-button>
       </span>
     </el-dialog>
+
   </div>
 </template>
 
@@ -229,6 +236,7 @@ const showReportDetails = (report) => {
 // 显示记录详细信息
 const showRecordDetails = (record) => {
   selectedRecord.value = record;
+  console.log(selectedRecord.value);
   recordDialogVisible.value = true;
 };
 
@@ -293,6 +301,27 @@ const filteredApprovedRecords = computed(() => {
 const filteredRejectedRecords = computed(() => {
   return filteredRecords.value.filter(record => record.status === 'rejected_record');
 });
+
+// 获取照片
+const fetchPhoto = async (url) => {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+    });
+    if (response.ok) {
+      // 如果请求成功，可以进行后续处理，比如显示图片
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      window.open(imageUrl, '_blank'); // 在新标签页中打开图片
+    } else {
+      console.error('请求失败', response.status);
+      // 可以添加相应的错误处理逻辑
+    }
+  } catch (error) {
+    console.error('发生错误:', error);
+    // 处理网络错误
+  }
+};
 
 // 页面加载完成后执行
 onMounted(() => {

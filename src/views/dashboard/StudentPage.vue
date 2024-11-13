@@ -343,7 +343,7 @@ const resetNewRecord = () => {
 
 // 获取比赛名称列表
 const handleGetCompetitionName = async (level) => {
-  if (level === "Other") return;
+  newReport.value.name = "";
   await getCompetitionName(newReport, comNames);
 };
 
