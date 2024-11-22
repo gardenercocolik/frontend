@@ -1,6 +1,7 @@
 // src/composables/useCompeition.js
 import axios from "axios";
 import { ElMessage } from "element-plus";
+import { ca } from "element-plus/es/locale/index.mjs";
 
 const URL = "http://localhost:18000/";
 const BASE_URL = `${URL}dashboard/`;
@@ -165,6 +166,78 @@ export const useCompeition = () => {
     }
   };
 
+  //查询学生
+  const getStudent=async(query,students,loading)=>{
+    loading.value = true; // 开始加载
+    students.value = []; // 清空当前选项
+    const csrftoken = await getCSRFToken();
+    if(query){
+      try {
+        console.log(query);//调试用
+        const formData = new FormData();
+        formData.append("level", newReport.value.level);
+        const res = await axios.post(
+          `${BASE_URL}reports/return-student/`,
+          formData,
+          {
+            withCredentials: true,
+            headers: {
+              "X-CSRFToken": csrftoken,
+            },
+          }
+          );
+        students.value = res.data.data;
+      }catch (error) {
+        ElMessage.error("获取学生失败");
+      }finally{
+          loading.value = false; // 加载完成
+      }
+    }
+    else{
+      loading.value = false;//空查询
+    }
+  }
+
+  //得到所有指导教师
+  const getAllInstructor=async(allInstructors)=>{
+    allInstructors.value = [];
+    const csrftoken = await getCSRFToken();
+    try{
+        console.log("getAllInstructor");//调试用
+        const res = await axios.post(
+          `${BASE_URL}reports/return-instructor/`,
+          {},
+          {
+            withCredentials: true,
+            headers: {
+              "X-CSRFToken": csrftoken,
+            },
+          }
+        );
+        allInstructors.value = res.data.data;
+    }catch (error) {
+        ElMessage.error("获取指导教师失败");
+    }
+  }
+
+  //根据输入查询指导教师
+  const queryInstructor =async(query,filteredInstructors,allInstructors,instructorLoading)=>{
+    instructorLoading.value = true;
+    try {
+      filteredInstructors.value = [];
+      if (query) {
+        console.log("Query:", query);
+        filteredInstructors.value = allInstructors.value.filter((instructor) =>
+          instructor.name.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+    } catch (error) {
+      ElMessage.error("查询指导教师失败");
+    } finally {
+      instructorLoading.value = false; // 确保加载状态关闭
+    }
+  }
+
   // 提交报备
   const submitReport = async (newReport, reportDialogVisible) => {
     const csrftoken = await getCSRFToken();
@@ -322,6 +395,9 @@ export const useCompeition = () => {
     getReports,
     getRecords,
     getCompetitionName,
+    getAllInstructor,
+    queryInstructor,
+    getStudent,
     submitReport,
     submitRecord,
     approveReport,

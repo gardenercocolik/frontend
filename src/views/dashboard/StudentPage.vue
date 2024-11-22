@@ -6,6 +6,7 @@
         <el-menu default-active="1" @select="handleSelect">
           <el-menu-item index="1">竞赛报备</el-menu-item>
           <el-menu-item index="2">竞赛记录</el-menu-item>
+          <el-menu-item index="3">团队管理</el-menu-item>
         </el-menu>
       </el-col>
 
@@ -272,6 +273,7 @@
       </el-col>
     </el-row>
 
+
     <!-- 创建报备弹窗 -->
     <el-dialog title="创建报备" v-model="reportDialogVisible" width="45%">
       <el-form ref="reportForm" :model="newReport" label-width="120px">
@@ -311,6 +313,19 @@
           </template>
         </el-form-item>
 
+        <!--比赛类型:个人赛or团队赛-->
+        <el-form-item label="比赛类型">
+          <el-radio-group v-model="newReport.type">
+            <el-radio :value="'personal'">个人赛</el-radio>
+            <el-radio :value="'team'">团队赛</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <!-- 团队赛新增队长队员选择 -->
+        <template v-if="newReport.type === 'team'">
+
+        </template>
+
         <!-- 比赛时间 -->
         <el-form-item label="比赛时间">
           <el-date-picker
@@ -326,10 +341,15 @@
 
         <!-- 指导老师 -->
         <el-form-item label="指导老师">
-          <el-input
-            v-model="newReport.instructor"
-            placeholder="请输入指导老师"
-          ></el-input>
+          <el-select v-model="newReport.instructor"  
+            filterable  
+            :remote-method="handleFilterInstructor"
+            :loading="instructorLoading"
+            value-key="name"
+            remote placeholder="请输入指导老师"
+          >
+            <el-option v-for="instructor in filteredInstructors" :key="instructor.id" :value="instructor.name"></el-option>
+          </el-select>
         </el-form-item>
 
         <!-- 提交表单 -->
@@ -442,6 +462,9 @@ const {
   getRecords,
   getReports,
   getCompetitionName,
+  getAllInstructor,
+  queryInstructor,
+  getStudent,
   submitReport,
   submitRecord,
   generatepdf,
@@ -471,6 +494,7 @@ const activeNamesRecord = [
 
 const newReport = ref({
   name: "",
+  type:"",
   competition_start: "",
   competition_end: "",
   level: "",
@@ -487,6 +511,12 @@ const newRecord = ref({
 });
 
 const comNames = ref([]); // 竞赛名称列表
+const allInstructors = ref([{name:"一块"},{name:"一大大大块"},{name:"一小块"},{name:"一大块"}]); // 指导老师列表
+const filteredInstructors = ref([]); // 过滤后的指导老师列表
+const instructorLoading = ref(false); // 指导老师列表查询状态
+
+const isGettingTeamMembers = ref(false); // 队员列表查询状态
+const value = ref([]); // 队员列表
 const sortOrder = ref("descending"); // 排序方式
 
 /** 计算属性 */
@@ -580,8 +610,15 @@ const handleGetCompetitionName = async (level) => {
   await getCompetitionName(newReport, comNames);
 };
 
+// 过滤指导教师
+const handleFilterInstructor = async(query) => {
+  queryInstructor(query,filteredInstructors,allInstructors,instructorLoading);
+}
+
 // 提交报备
 const handleSubmitReport = async () => {
+  console.log(newReport.value);
+  console.log(newReport.value.instructor.name);
   if (
     !newReport.value.name ||
     !newReport.value.competition_start ||
@@ -636,6 +673,7 @@ const handleSelect = (index) => {
 onMounted(async () => {
   getReports(reports);
   getRecords(records);
+  //getAllInstructor(allInstructors);
 });
 
 // 文件上传相关处理
