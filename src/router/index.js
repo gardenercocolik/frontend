@@ -5,7 +5,7 @@ import NewsPage from "@/views/NewsPage.vue";
 //import NotFoundPage from '@/views/NotFoundPage.vue'
 import LoginPage from "@/views/auth/LoginPage.vue";
 import RegisterPage from "@/views/auth/RegisterPage.vue";
-import StudentPage from "@/views/dashboard/StudentPage.vue";
+import StudentPage from "@/views/dashboard/StudentPage/StudentPage.vue";
 import ProfilePage from "@/views/dashboard/ProfilePage.vue";
 import TeacherPage from "@/views/dashboard/TeacherPage.vue";
 import { useUserStore } from "@/stores";
