@@ -1,6 +1,8 @@
 <template>
-  <NavBar title="网络安全实验中心 - 学生端" />
-  <div class="student-view">
+  <div>
+    <NavBar title="网络安全实验中心 - 学生端" />
+  
+    <div class="student-view">
     <el-row>
       <el-col :span="4" class="menu-col">
         <el-menu default-active="1" @select="handleSelect">
@@ -270,6 +272,11 @@
             </el-collapse-item>
           </el-collapse>
         </div>
+
+        <!-- 团队管理 -->
+        <div v-if="activeTab === '3'" class="right-col">
+          <TeamManagement v-model="teams" />
+        </div>
       </el-col>
     </el-row>
 
@@ -314,17 +321,23 @@
         </el-form-item>
 
         <!--比赛类型:个人赛or团队赛-->
-        <el-form-item label="比赛类型">
-          <el-radio-group v-model="newReport.type">
+        <el-form-item label="参赛形式">
+          <el-radio-group v-model="newReport.participation_form">
             <el-radio :value="'personal'">个人赛</el-radio>
             <el-radio :value="'team'">团队赛</el-radio>
           </el-radio-group>
+          <!-- 团队赛新增团队选择 -->
+          <template v-if="newReport.participation_form === 'team'">
+              <el-select v-model="newReport.team_id" placeholder="请选择团队(请先创建团队)">
+                  <el-option
+                    v-for="team in teams.data"
+                    :key="team.team_id"
+                    :label="team.team_name"
+                    :value="team.team_id"
+                  ></el-option>
+                </el-select>
+          </template>
         </el-form-item>
-
-        <!-- 团队赛新增队长队员选择 -->
-        <template v-if="newReport.type === 'team'">
-
-        </template>
 
         <!-- 比赛时间 -->
         <el-form-item label="比赛时间">
@@ -341,15 +354,18 @@
 
         <!-- 指导老师 -->
         <el-form-item label="指导老师">
-          <el-select v-model="newReport.instructor"  
-            filterable  
-            :remote-method="handleFilterInstructor"
-            :loading="instructorLoading"
-            value-key="name"
-            remote placeholder="请输入指导老师"
-          >
-            <el-option v-for="instructor in filteredInstructors" :key="instructor.id" :value="instructor.name"></el-option>
-          </el-select>
+          <el-input
+              v-model="newReport.instructor"
+              placeholder="请输入指导老师名称"
+            ></el-input>
+        </el-form-item>
+
+        <!-- 指导老师教工号 -->
+        <el-form-item label="指导老师教工号">
+          <el-input
+              v-model="newReport.instructor_id"
+              placeholder="请输入指导老师教工号"
+            ></el-input>
         </el-form-item>
 
         <!-- 提交表单 -->
@@ -449,14 +465,16 @@
         </el-form-item>
       </el-form>
     </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed ,reactive } from "vue";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
-import { useCompeition } from "../../composables/useCompeition";
+import TeamManagement from "@/views/dashboard/StudentPage/TeamManagement.vue";
+import { useCompeition } from "../../../composables/useCompeition";
 import { Delete } from "@element-plus/icons-vue";
 const {
   getRecords,
@@ -470,6 +488,8 @@ const {
   generatepdf,
   deleteReport,
 } = useCompeition();
+
+
 
 // 响应式数据
 const activeTab = ref("1");
@@ -494,11 +514,13 @@ const activeNamesRecord = [
 
 const newReport = ref({
   name: "",
-  type:"",
   competition_start: "",
   competition_end: "",
   level: "",
   instructor: "",
+  instructor_id: "",
+  participation_form: "personal",
+  team_id: "",
 });
 
 const newRecord = ref({
@@ -518,6 +540,9 @@ const instructorLoading = ref(false); // 指导老师列表查询状态
 const isGettingTeamMembers = ref(false); // 队员列表查询状态
 const value = ref([]); // 队员列表
 const sortOrder = ref("descending"); // 排序方式
+const teams = reactive({
+  data: []  // 这里是父组件的 teams 数据
+});
 
 /** 计算属性 */
 
@@ -577,6 +602,9 @@ const resetNewReport = () => {
     competition_end: "",
     level: "",
     instructor: "",
+    instructor_id: "",
+    participation_form: "personal",
+    team_id: "",
   };
 };
 
@@ -624,7 +652,9 @@ const handleSubmitReport = async () => {
     !newReport.value.competition_start ||
     !newReport.value.competition_end ||
     !newReport.value.level ||
-    !newReport.value.instructor
+    !newReport.value.instructor||
+    !newReport.value.instructor_id||
+    !newReport.value.participation_form
   ) {
     ElMessage.error("请填写所有必填项!!!");
     return;
@@ -667,6 +697,10 @@ const handleSelect = (index) => {
   if (index === "2") {
     getRecords(records);
   }
+  if (index === "3") {
+    console.log("TeamManagement");
+  
+  }
 };
 
 // 页面加载完成后执行
@@ -674,6 +708,7 @@ onMounted(async () => {
   getReports(reports);
   getRecords(records);
   //getAllInstructor(allInstructors);
+  console.log("StudentPage mounted");
 });
 
 // 文件上传相关处理
@@ -730,6 +765,7 @@ const handleDateChange = (value) => {
   newReport.value.competition_start = value[0]; // 获取开始日期
   newReport.value.competition_end = value[1]; // 获取结束日期
 };
+
 </script>
 
 <style scoped>

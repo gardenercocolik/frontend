@@ -248,6 +248,7 @@ export const useCompeition = () => {
     formData.append("competition_end", newReport.value.competition_end);
     formData.append("level", newReport.value.level);
     formData.append("instructor", newReport.value.instructor);
+    formData.append("instructor_id", newReport.value.instructor_id);
 
     try {
       const res = await axios.post(
@@ -391,6 +392,66 @@ export const useCompeition = () => {
       });
   };
 
+  // 获取团队记录列表
+  const getTeams = async (teams) => {
+    try {
+      const csrftoken = await getCSRFToken();
+      const res = await axios.post(
+        `${BASE_URL}teams/get_teams/`,
+        {},
+        {
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
+      teams.data = res.data.data;
+      console.log(teams.data);
+    } catch (error) {
+      console.log(error);
+      ElMessage.error(error.response?.data?.error || "获取团队列表失败!");
+    }
+  };
+
+  // 提交团队记录:请求为json格式
+  const submitTeam = async (newTeam, teamDialogVisible) => {
+    const csrftoken = await getCSRFToken();
+    console.log(newTeam);
+
+    const membersArray = newTeam.members.map(member => member.value);
+
+    const payload = {
+      team_name: newTeam.team_name,
+      leader: newTeam.leader,
+      members: membersArray,
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}teams/create_team/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken,
+        },
+        body: JSON.stringify(payload),
+      });
+    
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "创建团队失败");
+      }
+    
+      ElMessage.success("创建团队成功!");
+      teamDialogVisible.value = false;
+    } catch (error) {
+      ElMessage.error(error.message || "创建团队失败，请稍后再试");
+    }
+  };
+
+
+
   return {
     getReports,
     getRecords,
@@ -406,5 +467,7 @@ export const useCompeition = () => {
     rejectRecord,
     generatepdf,
     deleteReport,
+    getTeams,
+    submitTeam,
   };
 };
