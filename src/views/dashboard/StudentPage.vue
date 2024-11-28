@@ -153,10 +153,13 @@
                     <el-button-group>
                       <el-button
                         type="primary"
-                        @click="generatepdf(row.ReportID)"
-                        style="background-color: green"
-                        >生成pdf</el-button
-                      >
+                        @click="downloadpdf(row.ReportID)"
+                        style="background-color: green">生成pdf
+                      </el-button>
+                      <el-button
+                        type="primary"
+                        @click="handlePreview(row.ReportID)">预览pdf
+                      </el-button>
                     </el-button-group>
                   </template>
                 </el-table-column>
@@ -273,6 +276,22 @@
       </el-col>
     </el-row>
 
+    <!--预览pdf弹窗-->
+    <el-dialog
+    title="预览 PDF"
+    v-model="previewDialogVisible"
+    width="80%"
+    height="100%"
+    :before-close="handlePreviewClose"
+    >
+    <iframe
+      :src="previewUrl"
+      frameborder="0"
+      style="width: 100%; height: 900px; border: none;"
+    ></iframe>
+    </el-dialog>
+
+
 
     <!-- 创建报备弹窗 -->
     <el-dialog title="创建报备" v-model="reportDialogVisible" width="45%">
@@ -313,18 +332,7 @@
           </template>
         </el-form-item>
 
-        <!--比赛类型:个人赛or团队赛-->
-        <el-form-item label="比赛类型">
-          <el-radio-group v-model="newReport.type">
-            <el-radio :value="'personal'">个人赛</el-radio>
-            <el-radio :value="'team'">团队赛</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <!-- 团队赛新增队长队员选择 -->
-        <template v-if="newReport.type === 'team'">
-
-        </template>
+ 
 
         <!-- 比赛时间 -->
         <el-form-item label="比赛时间">
@@ -341,15 +349,7 @@
 
         <!-- 指导老师 -->
         <el-form-item label="指导老师">
-          <el-select v-model="newReport.instructor"  
-            filterable  
-            :remote-method="handleFilterInstructor"
-            :loading="instructorLoading"
-            value-key="name"
-            remote placeholder="请输入指导老师"
-          >
-            <el-option v-for="instructor in filteredInstructors" :key="instructor.id" :value="instructor.name"></el-option>
-          </el-select>
+         <el-input v-model="newReport.instructor"></el-input>
         </el-form-item>
 
         <!-- 提交表单 -->
@@ -462,12 +462,10 @@ const {
   getRecords,
   getReports,
   getCompetitionName,
-  getAllInstructor,
-  queryInstructor,
-  getStudent,
   submitReport,
   submitRecord,
-  generatepdf,
+  downloadpdf,
+  previewpdf,
   deleteReport,
 } = useCompeition();
 
@@ -511,14 +509,9 @@ const newRecord = ref({
 });
 
 const comNames = ref([]); // 竞赛名称列表
-const allInstructors = ref([{name:"一块"},{name:"一大大大块"},{name:"一小块"},{name:"一大块"}]); // 指导老师列表
-const filteredInstructors = ref([]); // 过滤后的指导老师列表
-const instructorLoading = ref(false); // 指导老师列表查询状态
-
-const isGettingTeamMembers = ref(false); // 队员列表查询状态
-const value = ref([]); // 队员列表
 const sortOrder = ref("descending"); // 排序方式
-
+const previewDialogVisible=ref(false);
+const previewUrl=ref("");
 /** 计算属性 */
 
 // 计算排序后的报备列表
@@ -604,16 +597,21 @@ const resetNewRecord = () => {
   };
 };
 
+//预览pdf
+const handlePreview = async (ReportID) => {
+  await previewpdf(ReportID,previewUrl);
+  console.log(previewDialogVisible.value);
+  previewDialogVisible.value = true;
+  console.log(previewUrl.value);
+  console.log(previewDialogVisible.value);
+};
+
 // 获取比赛名称列表
 const handleGetCompetitionName = async (level) => {
   newReport.value.name = "";
   await getCompetitionName(newReport, comNames);
 };
 
-// 过滤指导教师
-const handleFilterInstructor = async(query) => {
-  queryInstructor(query,filteredInstructors,allInstructors,instructorLoading);
-}
 
 // 提交报备
 const handleSubmitReport = async () => {
@@ -673,7 +671,6 @@ const handleSelect = (index) => {
 onMounted(async () => {
   getReports(reports);
   getRecords(records);
-  //getAllInstructor(allInstructors);
 });
 
 // 文件上传相关处理
@@ -703,6 +700,11 @@ const formattedFileList = (files) => {
   });
 };
 
+//关闭预览弹窗
+const handlePreviewClose = () => {
+      previewDialogVisible.value = false;
+      previewUrl.value = ""; // 关闭时清理 URL
+    };
 // 处理证书上传
 const handleCaChange = (file) => {
   if (file.status === "ready") {
@@ -755,8 +757,8 @@ const handleDateChange = (value) => {
   overflow: hidden;
 }
 .total-participation {
-  margin-bottom: 20px; /* 添加一些底部间距 */
-  font-size: 16px; /* 字体大小 */
-  color: #7f7f7f; /* 字体颜色 */
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #7f7f7f; 
 }
 </style>

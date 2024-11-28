@@ -1,7 +1,6 @@
 // src/composables/useCompeition.js
 import axios from "axios";
 import { ElMessage } from "element-plus";
-import { ca } from "element-plus/es/locale/index.mjs";
 
 const URL = "http://localhost:18000/";
 const BASE_URL = `${URL}dashboard/`;
@@ -198,45 +197,6 @@ export const useCompeition = () => {
     }
   }
 
-  //得到所有指导教师
-  const getAllInstructor=async(allInstructors)=>{
-    allInstructors.value = [];
-    const csrftoken = await getCSRFToken();
-    try{
-        console.log("getAllInstructor");//调试用
-        const res = await axios.post(
-          `${BASE_URL}reports/return-instructor/`,
-          {},
-          {
-            withCredentials: true,
-            headers: {
-              "X-CSRFToken": csrftoken,
-            },
-          }
-        );
-        allInstructors.value = res.data.data;
-    }catch (error) {
-        ElMessage.error("获取指导教师失败");
-    }
-  }
-
-  //根据输入查询指导教师
-  const queryInstructor =async(query,filteredInstructors,allInstructors,instructorLoading)=>{
-    instructorLoading.value = true;
-    try {
-      filteredInstructors.value = [];
-      if (query) {
-        console.log("Query:", query);
-        filteredInstructors.value = allInstructors.value.filter((instructor) =>
-          instructor.name.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-    } catch (error) {
-      ElMessage.error("查询指导教师失败");
-    } finally {
-      instructorLoading.value = false; // 确保加载状态关闭
-    }
-  }
 
   // 提交报备
   const submitReport = async (newReport, reportDialogVisible) => {
@@ -317,10 +277,9 @@ export const useCompeition = () => {
 
     try {
       const res = await axios.post(`${BASE_URL}records/submit/`, formData, {
-        withCredentials: true, // 添加 withCredentials
+        withCredentials: true,
         headers: {
-          "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
-          "X-CSRFToken": csrftoken, // 添加 CSRF 令牌
+          "X-CSRFToken": csrftoken,
         },
       });
 
@@ -335,68 +294,76 @@ export const useCompeition = () => {
     }
   };
 
-  // 生成PDF
-  const generatepdf = async (ReportID) => {
+  //预览PDF
+  const previewpdf = async (ReportID,previewUrl) => {
+    console.log("Entering previewPDF with ReportID:", ReportID);
     const csrftoken = await getCSRFToken();
-    const formData = new FormData();
-    formData.append("ReportID", ReportID);
-
-    fetch(`${BASE_URL}records/GeneratePDF/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken,
-      },
-      body: formData,
-      credentials: "include",
-    })
-      .then((response) => {
-        const disposition = response.headers.get("Content-Disposition");
-        let filename = "default.pdf";
-
-        if (disposition) {
-          // 尝试匹配filename*格式
-          const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
-          if (filenameStarMatch && filenameStarMatch[1]) {
-            // 解码并处理 '%' 进行替换
-            filename = decodeURIComponent(
-              filenameStarMatch[1].replace(/\+/g, "%20")
-            );
-          } else {
-            // 处理非编码文件名的情况
-            const filenameMatch = disposition.match(
-              /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
-            );
-            if (filenameMatch && filenameMatch[1]) {
-              filename = filenameMatch[1].replace(/['"]/g, ""); // 清除引号
-            }
-          }
-        }
-        return response.blob().then((blob) => {
-          return { blob, filename };
-        });
-      })
-      .then(({ blob, filename }) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename; // 使用提取的文件名
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url); // 释放Blob对象
-        ElMessage.success("生成PDF成功!");
-      })
-      .catch((error) => {
-        ElMessage.error("生成PDF失败!");
+    try {
+      const formData = new FormData();
+      formData.append("ReportID", ReportID);
+  
+      const response = await axios.post(`${BASE_URL}records/PreviewPDF/`, formData, {
+        withCredentials: true,
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+        responseType: 'blob', // 期待后端返回 Blob 数据
       });
+  
+      if (response.status === 200) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        previewUrl.value = window.URL.createObjectURL(blob);
+        ElMessage.success("PDF预览成功!");
+      } else {
+        throw new Error("无法预览PDF文件");
+      }
+    } catch (error) {
+      ElMessage.error("PDF预览失败!");
+      console.error("Error in previewPDF:", error);
+    }
+  };
+  
+  // 生成PDF
+  const downloadpdf = async (ReportID) => {
+    console.log("have enter generatepdf " + ReportID);
+    const csrftoken = await getCSRFToken();
+    try {
+      const formData = new FormData();
+      formData.append("ReportID", ReportID);
+      console.log(formData);
+  
+      const response = await axios.post(`${BASE_URL}records/DownloadPDF/`, formData, {
+        withCredentials: true,
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+        responseType: 'blob', // 指定返回的数据类型为 blob
+      });
+  
+      if (response.status === 200) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Report_${ReportID}.pdf`; // 设置下载的文件名
+        document.body.appendChild(link); // 将链接临时加入 DOM
+        link.click(); // 触发点击事件
+        document.body.removeChild(link); // 移除链接
+        window.URL.revokeObjectURL(url); // 释放 URL
+        ElMessage.success("PDF生成成功!");
+      } else {
+        throw new Error("无法生成PDF文件");
+      }
+    } catch (error) {
+      ElMessage.error("PDF生成失败!");
+      console.error(error); // 打印错误信息，便于调试
+    }
   };
 
   return {
     getReports,
     getRecords,
     getCompetitionName,
-    getAllInstructor,
-    queryInstructor,
     getStudent,
     submitReport,
     submitRecord,
@@ -404,7 +371,8 @@ export const useCompeition = () => {
     rejectReport,
     approveRecord,
     rejectRecord,
-    generatepdf,
+    downloadpdf,
+    previewpdf,
     deleteReport,
   };
 };
