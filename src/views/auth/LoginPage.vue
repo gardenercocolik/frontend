@@ -24,11 +24,12 @@
             </el-form-item>
 
             <el-form-item style="display: flex; justify-content: center; align-items: center;">
-    <el-button :loading="loading" type="primary" @click="HandleLogin">登录</el-button>
-</el-form-item>
-<el-form-item style="display: flex; justify-content: center; align-items: center; margin-left: 100px;">
-    <router-link class="register-link" to="/register">没有账号？点击注册-></router-link>
-</el-form-item>
+                <el-button :loading="loading" type="primary" @click="HandleLogin">登录</el-button>
+            </el-form-item>
+            
+            <el-form-item style="display: flex; justify-content: center; align-items: center; margin-left: 100px;">
+                <router-link class="register-link" to="/register">没有账号？点击注册-></router-link>
+            </el-form-item>
         </el-form>
     </div>
 </template>

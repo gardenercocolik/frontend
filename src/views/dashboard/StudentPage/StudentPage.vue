@@ -1,11 +1,14 @@
 <template>
-  <NavBar title="网络安全实验中心 - 学生端" />
-  <div class="student-view">
+  <div>
+    <NavBar title="网络安全实验中心 - 学生端" />
+  
+    <div class="student-view">
     <el-row>
       <el-col :span="4" class="menu-col">
         <el-menu default-active="1" @select="handleSelect">
           <el-menu-item index="1">竞赛报备</el-menu-item>
           <el-menu-item index="2">竞赛记录</el-menu-item>
+          <el-menu-item index="3">团队管理</el-menu-item>
         </el-menu>
       </el-col>
 
@@ -152,10 +155,13 @@
                     <el-button-group>
                       <el-button
                         type="primary"
-                        @click="generatepdf(row.ReportID)"
-                        style="background-color: green"
-                        >生成pdf</el-button
-                      >
+                        @click="downloadpdf(row.ReportID)"
+                        style="background-color: green">生成pdf
+                      </el-button>
+                      <el-button
+                        type="primary"
+                        @click="handlePreview(row.ReportID)">预览pdf
+                      </el-button>
                     </el-button-group>
                   </template>
                 </el-table-column>
@@ -269,8 +275,30 @@
             </el-collapse-item>
           </el-collapse>
         </div>
+
+        <!-- 团队管理 -->
+        <div v-if="activeTab === '3'" class="right-col">
+          <TeamManagement v-model="teams" />
+        </div>
       </el-col>
     </el-row>
+
+    <!--预览pdf弹窗-->
+    <el-dialog
+    title="预览 PDF"
+    v-model="previewDialogVisible"
+    width="80%"
+    height="100%"
+    :before-close="handlePreviewClose"
+    >
+    <iframe
+      :src="previewUrl"
+      frameborder="0"
+      style="width: 100%; height: 900px; border: none;"
+    ></iframe>
+    </el-dialog>
+
+
 
     <!-- 创建报备弹窗 -->
     <el-dialog title="创建报备" v-model="reportDialogVisible" width="45%">
@@ -311,6 +339,26 @@
           </template>
         </el-form-item>
 
+
+        <!--比赛类型:个人赛or团队赛-->
+        <el-form-item label="参赛形式">
+          <el-radio-group v-model="newReport.participation_form">
+            <el-radio :value="'personal'">个人赛</el-radio>
+            <el-radio :value="'team'">团队赛</el-radio>
+          </el-radio-group>
+          <!-- 团队赛新增团队选择 -->
+          <template v-if="newReport.participation_form === 'team'">
+              <el-select v-model="newReport.team_id" placeholder="请选择团队(请先创建团队)">
+                  <el-option
+                    v-for="team in teams.data"
+                    :key="team.team_id"
+                    :label="team.team_name"
+                    :value="team.team_id"
+                  ></el-option>
+                </el-select>
+          </template>
+        </el-form-item>
+
         <!-- 比赛时间 -->
         <el-form-item label="比赛时间">
           <el-date-picker
@@ -326,10 +374,22 @@
 
         <!-- 指导老师 -->
         <el-form-item label="指导老师">
+<<<<<<< HEAD:src/views/dashboard/StudentPage.vue
+         <el-input v-model="newReport.instructor"></el-input>
+=======
           <el-input
-            v-model="newReport.instructor"
-            placeholder="请输入指导老师"
-          ></el-input>
+              v-model="newReport.instructor"
+              placeholder="请输入指导老师名称"
+            ></el-input>
+        </el-form-item>
+
+        <!-- 指导老师教工号 -->
+        <el-form-item label="指导老师教工号">
+          <el-input
+              v-model="newReport.instructor_id"
+              placeholder="请输入指导老师教工号"
+            ></el-input>
+>>>>>>> fe0b885a46d19b9270ee9d9489c2b3bba250726c:src/views/dashboard/StudentPage/StudentPage.vue
         </el-form-item>
 
         <!-- 提交表单 -->
@@ -429,14 +489,16 @@
         </el-form-item>
       </el-form>
     </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed ,reactive } from "vue";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
-import { useCompeition } from "../../composables/useCompeition";
+import TeamManagement from "@/views/dashboard/StudentPage/TeamManagement.vue";
+import { useCompeition } from "../../../composables/useCompeition";
 import { Delete } from "@element-plus/icons-vue";
 const {
   getRecords,
@@ -444,9 +506,12 @@ const {
   getCompetitionName,
   submitReport,
   submitRecord,
-  generatepdf,
+  downloadpdf,
+  previewpdf,
   deleteReport,
 } = useCompeition();
+
+
 
 // 响应式数据
 const activeTab = ref("1");
@@ -475,6 +540,9 @@ const newReport = ref({
   competition_end: "",
   level: "",
   instructor: "",
+  instructor_id: "",
+  participation_form: "personal",
+  team_id: "",
 });
 
 const newRecord = ref({
@@ -488,6 +556,11 @@ const newRecord = ref({
 
 const comNames = ref([]); // 竞赛名称列表
 const sortOrder = ref("descending"); // 排序方式
+const previewDialogVisible=ref(false);
+const previewUrl=ref("");
+const teams = reactive({
+  data: []  // 这里是父组件的 teams 数据
+});
 
 /** 计算属性 */
 
@@ -547,6 +620,9 @@ const resetNewReport = () => {
     competition_end: "",
     level: "",
     instructor: "",
+    instructor_id: "",
+    participation_form: "personal",
+    team_id: "",
   };
 };
 
@@ -574,20 +650,34 @@ const resetNewRecord = () => {
   };
 };
 
+//预览pdf
+const handlePreview = async (ReportID) => {
+  await previewpdf(ReportID,previewUrl);
+  console.log(previewDialogVisible.value);
+  previewDialogVisible.value = true;
+  console.log(previewUrl.value);
+  console.log(previewDialogVisible.value);
+};
+
 // 获取比赛名称列表
 const handleGetCompetitionName = async (level) => {
   newReport.value.name = "";
   await getCompetitionName(newReport, comNames);
 };
 
+
 // 提交报备
 const handleSubmitReport = async () => {
+  console.log(newReport.value);
+  console.log(newReport.value.instructor.name);
   if (
     !newReport.value.name ||
     !newReport.value.competition_start ||
     !newReport.value.competition_end ||
     !newReport.value.level ||
-    !newReport.value.instructor
+    !newReport.value.instructor||
+    !newReport.value.instructor_id||
+    !newReport.value.participation_form
   ) {
     ElMessage.error("请填写所有必填项!!!");
     return;
@@ -630,12 +720,17 @@ const handleSelect = (index) => {
   if (index === "2") {
     getRecords(records);
   }
+  if (index === "3") {
+    console.log("TeamManagement");
+  
+  }
 };
 
 // 页面加载完成后执行
 onMounted(async () => {
   getReports(reports);
   getRecords(records);
+  console.log("StudentPage mounted");
 });
 
 // 文件上传相关处理
@@ -665,6 +760,11 @@ const formattedFileList = (files) => {
   });
 };
 
+//关闭预览弹窗
+const handlePreviewClose = () => {
+      previewDialogVisible.value = false;
+      previewUrl.value = ""; // 关闭时清理 URL
+    };
 // 处理证书上传
 const handleCaChange = (file) => {
   if (file.status === "ready") {
@@ -692,6 +792,7 @@ const handleDateChange = (value) => {
   newReport.value.competition_start = value[0]; // 获取开始日期
   newReport.value.competition_end = value[1]; // 获取结束日期
 };
+
 </script>
 
 <style scoped>
@@ -717,8 +818,8 @@ const handleDateChange = (value) => {
   overflow: hidden;
 }
 .total-participation {
-  margin-bottom: 20px; /* 添加一些底部间距 */
-  font-size: 16px; /* 字体大小 */
-  color: #7f7f7f; /* 字体颜色 */
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #7f7f7f; 
 }
 </style>

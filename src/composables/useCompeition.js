@@ -165,6 +165,39 @@ export const useCompeition = () => {
     }
   };
 
+  //查询学生
+  const getStudent=async(query,students,loading)=>{
+    loading.value = true; // 开始加载
+    students.value = []; // 清空当前选项
+    const csrftoken = await getCSRFToken();
+    if(query){
+      try {
+        console.log(query);//调试用
+        const formData = new FormData();
+        formData.append("level", newReport.value.level);
+        const res = await axios.post(
+          `${BASE_URL}reports/return-student/`,
+          formData,
+          {
+            withCredentials: true,
+            headers: {
+              "X-CSRFToken": csrftoken,
+            },
+          }
+          );
+        students.value = res.data.data;
+      }catch (error) {
+        ElMessage.error("获取学生失败");
+      }finally{
+          loading.value = false; // 加载完成
+      }
+    }
+    else{
+      loading.value = false;//空查询
+    }
+  }
+
+
   // 提交报备
   const submitReport = async (newReport, reportDialogVisible) => {
     const csrftoken = await getCSRFToken();
@@ -175,6 +208,7 @@ export const useCompeition = () => {
     formData.append("competition_end", newReport.value.competition_end);
     formData.append("level", newReport.value.level);
     formData.append("instructor", newReport.value.instructor);
+    formData.append("instructor_id", newReport.value.instructor_id);
 
     try {
       const res = await axios.post(
@@ -244,10 +278,9 @@ export const useCompeition = () => {
 
     try {
       const res = await axios.post(`${BASE_URL}records/submit/`, formData, {
-        withCredentials: true, // 添加 withCredentials
+        withCredentials: true,
         headers: {
-          "Content-Type": "multipart/form-data", // 指定内容类型为表单数据
-          "X-CSRFToken": csrftoken, // 添加 CSRF 令牌
+          "X-CSRFToken": csrftoken,
         },
       });
 
@@ -262,73 +295,147 @@ export const useCompeition = () => {
     }
   };
 
-  // 生成PDF
-  const generatepdf = async (ReportID) => {
+  //预览PDF
+  const previewpdf = async (ReportID,previewUrl) => {
+    console.log("Entering previewPDF with ReportID:", ReportID);
     const csrftoken = await getCSRFToken();
-    const formData = new FormData();
-    formData.append("ReportID", ReportID);
-
-    fetch(`${BASE_URL}records/GeneratePDF/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken,
-      },
-      body: formData,
-      credentials: "include",
-    })
-      .then((response) => {
-        const disposition = response.headers.get("Content-Disposition");
-        let filename = "default.pdf";
-
-        if (disposition) {
-          // 尝试匹配filename*格式
-          const filenameStarMatch = disposition.match(/filename\*=utf-8''(.+)/);
-          if (filenameStarMatch && filenameStarMatch[1]) {
-            // 解码并处理 '%' 进行替换
-            filename = decodeURIComponent(
-              filenameStarMatch[1].replace(/\+/g, "%20")
-            );
-          } else {
-            // 处理非编码文件名的情况
-            const filenameMatch = disposition.match(
-              /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
-            );
-            if (filenameMatch && filenameMatch[1]) {
-              filename = filenameMatch[1].replace(/['"]/g, ""); // 清除引号
-            }
-          }
-        }
-        return response.blob().then((blob) => {
-          return { blob, filename };
-        });
-      })
-      .then(({ blob, filename }) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename; // 使用提取的文件名
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url); // 释放Blob对象
-        ElMessage.success("生成PDF成功!");
-      })
-      .catch((error) => {
-        ElMessage.error("生成PDF失败!");
+    try {
+      const formData = new FormData();
+      formData.append("ReportID", ReportID);
+  
+      const response = await axios.post(`${BASE_URL}records/PreviewPDF/`, formData, {
+        withCredentials: true,
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+        responseType: 'blob', // 期待后端返回 Blob 数据
       });
+  
+      if (response.status === 200) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        previewUrl.value = window.URL.createObjectURL(blob);
+        ElMessage.success("PDF预览成功!");
+      } else {
+        throw new Error("无法预览PDF文件");
+      }
+    } catch (error) {
+      ElMessage.error("PDF预览失败!");
+      console.error("Error in previewPDF:", error);
+    }
   };
+  
+  // 生成PDF
+  const downloadpdf = async (ReportID) => {
+    console.log("have enter generatepdf " + ReportID);
+    const csrftoken = await getCSRFToken();
+    try {
+      const formData = new FormData();
+      formData.append("ReportID", ReportID);
+      console.log(formData);
+  
+      const response = await axios.post(`${BASE_URL}records/DownloadPDF/`, formData, {
+        withCredentials: true,
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+        responseType: 'blob', // 指定返回的数据类型为 blob
+      });
+  
+      if (response.status === 200) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Report_${ReportID}.pdf`; // 设置下载的文件名
+        document.body.appendChild(link); // 将链接临时加入 DOM
+        link.click(); // 触发点击事件
+        document.body.removeChild(link); // 移除链接
+        window.URL.revokeObjectURL(url); // 释放 URL
+        ElMessage.success("PDF生成成功!");
+      } else {
+        throw new Error("无法生成PDF文件");
+      }
+    } catch (error) {
+      ElMessage.error("PDF生成失败!");
+      console.error(error); // 打印错误信息，便于调试
+    }
+  };
+
+  // 获取团队记录列表
+  const getTeams = async (teams) => {
+    try {
+      const csrftoken = await getCSRFToken();
+      const res = await axios.post(
+        `${BASE_URL}teams/get_teams/`,
+        {},
+        {
+          headers: {
+            "X-CSRFToken": csrftoken,
+          },
+          withCredentials: true,
+        }
+      );
+      teams.data = res.data.data;
+      console.log(teams.data);
+    } catch (error) {
+      console.log(error);
+      ElMessage.error(error.response?.data?.error || "获取团队列表失败!");
+    }
+  };
+
+  // 提交团队记录:请求为json格式
+  const submitTeam = async (newTeam, teamDialogVisible) => {
+    const csrftoken = await getCSRFToken();
+    console.log(newTeam);
+
+    const membersArray = newTeam.members.map(member => member.value);
+
+    const payload = {
+      team_name: newTeam.team_name,
+      leader: newTeam.leader,
+      members: membersArray,
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}teams/create_team/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken,
+        },
+        body: JSON.stringify(payload),
+      });
+    
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "创建团队失败");
+      }
+    
+      ElMessage.success("创建团队成功!");
+      teamDialogVisible.value = false;
+    } catch (error) {
+      ElMessage.error(error.message || "创建团队失败，请稍后再试");
+    }
+  };
+
+
 
   return {
     getReports,
     getRecords,
     getCompetitionName,
+    getStudent,
     submitReport,
     submitRecord,
     approveReport,
     rejectReport,
     approveRecord,
     rejectRecord,
-    generatepdf,
+    downloadpdf,
+    previewpdf,
     deleteReport,
+    getTeams,
+    submitTeam,
   };
 };
